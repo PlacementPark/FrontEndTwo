@@ -1,0 +1,68 @@
+.bg {
+  background-image: url('./Assets/BG.jpeg');
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+  min-width: 97vw;
+  min-height: 100vh;
+}
+
+/* ::-webkit-scrollbar {
+  display: none;
+} */
+ 
+.dbButton{
+  height: 7vh;
+  background-color: transparent;
+  backdrop-filter: blur(70px);
+  border-radius: 20px;
+  text-align: center;
+  border-block-style: solid;
+  border-color: white;
+  border-block-width: 0.1vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.dbCards{
+  height: 14.5vh;
+  background-color: transparent;
+  backdrop-filter: blur(70px);
+  color: white;
+  border-radius: 20px;
+  border-left-style: solid;
+  border-left-color: #FF5C00;
+  border-left-width: 0.5vh;
+}
+
+/* CSS for Dividers to turn white in dark */
+.dw.MuiDialogContent-dividers {
+  border-top: 1px solid white;
+  border-bottom: 1px solid white;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* CSS for MUI TextFields to turn white in dark */
+.tw .MuiOutlinedInput-root {
+  color: white; /* Text color */
+}
+.tw .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline {
+  border-color: white; /* Unfocused border color */
+}
+.tw .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
+  border-color: rgb(0, 204, 255); /* Hover border color */
+}
+.tw .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: rgb(0, 204, 255); /* Focused border color */
+}
+.tw .MuiInputLabel-root {
+  color: white; /* Label color */
+}
+.tw .MuiInputLabel-root.Mui-focused {
+  color: rgb(0, 204, 255); /* Focused label color */
+}
