@@ -1,21 +1,21 @@
 import React from "react";
 import {
-   Grid,
-   Card,
-   CardContent,
-   Typography,
-   TextField,
-   alpha,
-   CardMedia,
-   CardActions,
-   Button,
-   IconButton,
-   OutlinedInput,
-   InputLabel,
-   InputAdornment,
-   FormControl,
+  Grid,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  alpha,
+  CardMedia,
+  Button,
+  IconButton,
+  OutlinedInput,
+  InputLabel,
+  InputAdornment,
+  FormControl,
+  Stack,
 } from "@mui/material";
-import axios from "axios";
+
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import image from "../../Assets/Placement.jpeg";
@@ -23,154 +23,164 @@ import { useDispatch } from "react-redux";
 import { setUser } from "../../Assets/Features/User/userSlice";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import AxiosInstance from "./AxiosInstance";
 
 export default function Login() {
-   // STATES HANDLING AND VARIABLES
-   const [username, setUsername] = React.useState("");
-   const [password, setPassword] = React.useState("");
-   const navigate = useNavigate();
-   const dispatch = useDispatch();
-   const [showPassword, setShowPassword] = React.useState(false);
-   const handleClickShowPassword = () => setShowPassword((show) => !show);
+  // STATES
+  const [username, setUsername] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [showPassword, setShowPassword] = React.useState(false);
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
-   // FUNCTIONS HANDLING AND API POST CALLS
-   const handleLogin = () => {
-      axios
-         .post("https://tpp-backend-eura.onrender.com/api/v1/auth/login", {
-            userMail: username,
-            password: password,
-         })
-         .then((res) => {
-            localStorage.setItem(
-               "user",
-               JSON.stringify({ username, token: "Bearer " + res.data.token })
-            );
+  // TOGGLE PASSWORD
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
 
-            dispatch(
-               setUser({
-                  userMail: res.data.userMail,
-                  employeeType: res.data.employeeType,
-                  userid: res.data.userid,
-                  username: res.data.username,
-               })
-            );
+  // LOGIN FUNCTION
+  const handleLogin = async () => {
+    try {
+      const res = await AxiosInstance.post("/auth/login", {
+        userMail: username,
+        password,
+      });
 
-            navigate("/");
-         })
-         .catch((err) => {
-            toast.error(err.response.data.message);
-         });
-   };
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ username, token: "Bearer " + res.data.token })
+      );
 
-   //CSS HANDLING FOR CARDS/BUTTON/PAGE ON XS AND SM
-   const screenWidth = window.innerWidth;
-   const inlineStyles = {
-      paddingBottom: "2vh",
-      ...(screenWidth <= 576 && { marginLeft: "5%", width: "90%" }), // xs screens
-      ...(screenWidth > 576 && { marginLeft: "32.5%", width: "35%" }), // xs+ screens
-   };
+      dispatch(
+        setUser({
+          userMail: res.data.userMail,
+          employeeType: res.data.employeeType,
+          userid: res.data.userid,
+          username: res.data.username,
+        })
+      );
 
-   //JSX CODE
-   return (
-      <>
-         <div>
-            <div style={{ paddingTop: "20vh" }}>
-               <Card
-                  sx={{
-                     ...inlineStyles,
-                     backgroundColor: alpha("#FFFFFF", 0.4),
-                  }}
-               >
-                  <CardMedia
-                     component={"img"}
-                     sx={{ height: "20vh", width: "100%" }}
-                     image={image}
-                     alt="The Placement Park logo"
-                  />
-                  <CardContent>
-                     <Typography
-                        gutterBottom
-                        variant="h5"
-                        textAlign="center"
-                        fontWeight="bold"
-                        letterSpacing="10px"
-                        sx={{ marginBottom: "-12px" }}
-                     >
-                        LOGIN
-                     </Typography>
-                  </CardContent>
-                  <CardActions sx={{ m: 2 }}>
-                     <Grid container rowSpacing={2} columnSpacing={4}>
-                        <Grid item xs={12}>
-                           <TextField
-                              fullWidth
-                              label="Email ID"
-                              variant="outlined"
-                              value={username}
-                              onChange={(e) => setUsername(e.target.value)}
-                           />
-                        </Grid>
-                        <Grid item xs={12}>
-                           <FormControl variant="outlined" fullWidth>
-                              <InputLabel htmlFor="outlined-adornment-password">
-                                 Password
-                              </InputLabel>
-                              <OutlinedInput
-                                 id="outlined-adornment-password"
-                                 type={showPassword ? "text" : "password"}
-                                 endAdornment={
-                                    <InputAdornment position="end">
-                                       <IconButton
-                                          aria-label="toggle password visibility"
-                                          onClick={handleClickShowPassword}
-                                          edge="end"
-                                       >
-                                          {showPassword ? (
-                                             <VisibilityOff />
-                                          ) : (
-                                             <Visibility />
-                                          )}
-                                       </IconButton>
-                                    </InputAdornment>
-                                 }
-                                 label="Password"
-                                 value={password}
-                                 onChange={(e) => setPassword(e.target.value)}
-                              />
-                           </FormControl>
-                        </Grid>
-                        <Grid item xs={6}>
-                           <Button
-                              fullWidth
-                              variant="contained"
-                              size="large"
-                              color="primary"
-                              sx={{ backgroundColor: alpha("#0000FF", 0.5) }}
-                              onClick={() => {
-                                 setUsername("");
-                                 setPassword("");
-                              }}
-                           >
-                              Clear
-                           </Button>
-                        </Grid>
-                        <Grid item xs={6}>
-                           <Button
-                              fullWidth
-                              variant="contained"
-                              size="large"
-                              color="success"
-                              sx={{ backgroundColor: alpha("#008000", 0.7) }}
-                              onClick={handleLogin}
-                           >
-                              Login
-                           </Button>
-                        </Grid>
-                     </Grid>
-                  </CardActions>
-               </Card>
-            </div>
-         </div>
-      </>
-   );
+      navigate("/");
+    } catch (err) {
+      toast.error(err?.response?.data?.message || "Login failed");
+    }
+  };
+
+  return (
+    <Grid
+      container
+      justifyContent="center"
+      alignItems="center"
+      sx={{
+        minHeight: "100vh",
+        p: 2,
+      }}
+    >
+      <Grid item xs={12} sm={8} md={6} lg={4}>
+        <Card
+          elevation={6}
+          sx={{
+            borderRadius: 4,
+            backgroundColor: alpha("#FFFFFF", 0.15),
+            backdropFilter: "blur(0.5px)",
+            //color: "white",
+          }}
+        >
+          <CardMedia
+            component="img"
+            sx={{
+              height: { xs: "18vh", md: "20vh" },
+              objectFit: "cover",
+              borderTopLeftRadius: "16px",
+              borderTopRightRadius: "16px",
+            }}
+            image={image}
+            alt="The Placement Park logo"
+          />
+
+          <CardContent>
+            <Typography
+              variant="h5"
+              textAlign="center"
+              fontWeight="bold"
+              letterSpacing={6}
+              gutterBottom
+            >
+              LOGIN
+            </Typography>
+
+            {/* Email */}
+            <TextField
+              fullWidth
+              label="Email ID"
+              variant="outlined"
+              margin="normal"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              InputProps={{ sx: { borderRadius: 2, backgroundColor: "white" } }}
+            />
+
+            {/* Password */}
+            <FormControl variant="outlined" fullWidth margin="normal">
+              <InputLabel>Password</InputLabel>
+              <OutlinedInput
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                endAdornment={
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={handleClickShowPassword}
+                      edge="center"
+                      aria-label="toggle password visibility"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                }
+                label="Password"
+                sx={{ borderRadius: 2, backgroundColor: "white" }}
+              />
+            </FormControl>
+
+            {/* Buttons */}
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              mt={3}
+              justifyContent="center"
+            >
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                color="error"
+                onClick={() => {
+                  setUsername("");
+                  setPassword("");
+                }}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: "bold",
+                }}
+              >
+                Clear
+              </Button>
+              <Button
+                fullWidth
+                variant="contained"
+                size="large"
+                color="success"
+                onClick={handleLogin}
+                sx={{
+                  borderRadius: 2,
+                  fontWeight: "bold",
+                }}
+              >
+                Login
+              </Button>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Grid>
+    </Grid>
+  );
 }

@@ -22,13 +22,19 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import { toast } from "react-toastify";
 import ControlPointIcon from "@mui/icons-material/ControlPoint";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-
+import AxiosInstance from "../Main/AxiosInstance";
+import {
+   L1_STATUS,
+   L2_STATUS,
+   SELECT_STATUS,
+   INTERVIEW_STATUS,
+   LANGUAGE_LEVEL,
+} from "../Main/Constants";
 export default function AddCandidate(props) {
    // STATES HANDLING AND VARIABLES
    const navigate = useNavigate();
@@ -41,10 +47,7 @@ export default function AddCandidate(props) {
    const [qualificationList, setQualificationList] = React.useState([]);
    const [languageList, setLanguageList] = React.useState([]);
    const [expandedCompany, setExpandedCompany] = React.useState(false);
-   const [languageLevelList, setlanguageLevelList] = React.useState([]);
-   const [assessment, setAssessment] = React.useState([]);
-   const [interviewStatus, setInterviewStatus] = React.useState([]);
-   const [select, setSelect] = React.useState([]);
+   
    const [candidate, setCandidate] = React.useState({
       fullName: "",
       mobile: [""],
@@ -85,35 +88,30 @@ export default function AddCandidate(props) {
       EMP_ID: "",
       onboardingDate: null,
       nextTrackingDate: null,
-      l1Assessment: "",
+      l1Assessment: null,
       l2Assessment: null,
       billingDate: null,
       invoiceNumber: "",
       invoiceDate: null,
+      createdOn: null,
+      l1StatDate: null,
+      l2StatDate: null,
+      interviewStatDate: null,
+      tenureStatDate: null,
+      selectDate: null,
+      offerDropDate: null,
+      nonTenureDate: null,
+      assignedOn: null
    });
 
    // API CALLS HANDLING
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/companyType?companyType=Empanelled",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const res = await AxiosInstance.get(
+               "/company/candidateCompanyType?companyType=Empanelled"
             );
-            const extraRes = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/extra/all",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
+            const extraRes = await AxiosInstance.get("/extra/all");
 
             setCompaniesList(res.data);
             extraRes.data.forEach(({ _id, data }) => {
@@ -121,11 +119,7 @@ export default function AddCandidate(props) {
                else if (_id === "Locations") setLocationList(data);
                else if (_id === "Qualifications") setQualificationList(data);
                else if (_id === "Languages") setLanguageList(data);
-               else if (_id === "Language Level") setlanguageLevelList(data);
-               else if (_id === "L1&L2") setAssessment(data);
-               else if (_id === "Interview Status") setInterviewStatus(data);
-               else if (_id === "Select") setSelect(data);
-            });
+               });
          } catch (error) {}
       };
       fetchData();
@@ -176,31 +170,32 @@ export default function AddCandidate(props) {
          }
 
          if (flag) return;
-         await axios.post(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate",
-            {
-               ...candidate,
-               assignedEmployee: userid,
-               createdByEmployee: userid,
-            },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
-         await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/extra/skills",
-            { data: [...new Set([...candidate.skills, ...skillsList])] },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         if (candidate.l1Assessment || candidate.l1Assessment != "") {
+            candidate.l1StatDate = new Date();
+         }
+         if (candidate.l2Assessment || candidate.l2Assessment != "") {
+            candidate.l2StatDate = new Date();
+         }
+         if (candidate.interviewStatus || candidate.interviewStatus != "") {
+            candidate.interviewStatDate = new Date();
+         }
+         if (candidate.select || candidate.select != "") {
+            candidate.tenureStatDate = new Date();
+         }
+         console.log(candidate);
+         
+         await AxiosInstance.post("/candidate", {
+            ...candidate,
+            assignedEmployee: userid,
+            createdByEmployee: userid,
+            createdOn: new Date(),
+            assignedOn: new Date(),
+         });
+         await AxiosInstance.patch("/extra/skills", {
+            data: [...new Set([...candidate.skills, ...skillsList])],
+         });
          toast.success("Candidate Added Successfully");
          navigate("/");
-         window.location.reload();
       } catch (error) {
          console.log(error);
       }
@@ -208,16 +203,7 @@ export default function AddCandidate(props) {
 
    const checkNumber = async (num) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/mobile/" +
-               num,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/candidate/mobile/" + num);
          if (res.data.status === true) toast.error("Number already exists");
       } catch (error) {}
    };
@@ -519,7 +505,7 @@ export default function AddCandidate(props) {
                                  }}
                                  fullWidth
                               >
-                                 {languageLevelList.map((option) => (
+                                 {LANGUAGE_LEVEL.map((option) => (
                                     <MenuItem key={option} value={option}>
                                        {option}
                                     </MenuItem>
@@ -647,6 +633,7 @@ export default function AddCandidate(props) {
                                  fullWidth
                               >
                                  <DatePicker
+                                    format="DD/MM/YYYY"
                                     label="Year of Passing"
                                     views={["year"]}
                                     sx={{ width: "100%" }}
@@ -860,6 +847,7 @@ export default function AddCandidate(props) {
                                              fullWidth
                                           >
                                              <DatePicker
+                                                format="DD/MM/YYYY"
                                                 label="Start Year"
                                                 className="candidateCompanyStartDate"
                                                 sx={{ width: "100%" }}
@@ -884,6 +872,7 @@ export default function AddCandidate(props) {
                                              fullWidth
                                           >
                                              <DatePicker
+                                                format="DD/MM/YYYY"
                                                 label="End Year"
                                                 className="candidateCompanyEndDate"
                                                 sx={{ width: "100%" }}
@@ -1040,7 +1029,7 @@ export default function AddCandidate(props) {
                            }
                            fullWidth
                         >
-                           {assessment.map((option) => (
+                           {L1_STATUS.map((option) => (
                               <MenuItem key={option} value={option}>
                                  {option}
                               </MenuItem>
@@ -1062,9 +1051,9 @@ export default function AddCandidate(props) {
                                  })
                               }
                            >
-                              {assessment.map((option) => (
-                                 <MenuItem key={option} value={option}>
-                                    {option}
+                              {L2_STATUS.map((option) => (
+                                 <MenuItem key={option||"Empty"} value={option}>
+                                    {option||"--SELECT--"}
                                  </MenuItem>
                               ))}
                            </TextField>
@@ -1146,6 +1135,7 @@ export default function AddCandidate(props) {
                                  fullWidth
                               >
                                  <DatePicker
+                                    format="DD/MM/YYYY"
                                     label="Interview Date"
                                     className="candidateCompanyEndDate"
                                     sx={{ width: "100%" }}
@@ -1179,7 +1169,7 @@ export default function AddCandidate(props) {
                                  }
                                  fullWidth
                               >
-                                 {interviewStatus.map((option) => (
+                                 {INTERVIEW_STATUS.map((option) => (
                                     <MenuItem key={option} value={option}>
                                        {option}
                                     </MenuItem>
@@ -1189,7 +1179,8 @@ export default function AddCandidate(props) {
                         </>
                      )}
                      {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
-                        candidate.interviewStatus === "Select" && (
+                        (candidate.interviewStatus === "Select" ||
+                           candidate.interviewStatus === "Offer Drop") && (
                            <>
                               <Grid item xs={4}>
                                  <TextField
@@ -1226,6 +1217,7 @@ export default function AddCandidate(props) {
                                     fullWidth
                                  >
                                     <DatePicker
+                                       format="DD/MM/YYYY"
                                        label="Invoice Date"
                                        className="candidateInvoiceDate"
                                        sx={{ width: "100%" }}
@@ -1236,7 +1228,7 @@ export default function AddCandidate(props) {
                                              invoiceDate: e,
                                           });
                                        }}
-                                       value={(candidate.invoiceDate)}
+                                       value={candidate.invoiceDate}
                                     />
                                  </LocalizationProvider>
                               </Grid>
@@ -1254,7 +1246,7 @@ export default function AddCandidate(props) {
                                     }
                                     fullWidth
                                  >
-                                    {select.map((option) => (
+                                    {SELECT_STATUS.map((option) => (
                                        <MenuItem key={option} value={option}>
                                           {option}
                                        </MenuItem>
@@ -1288,6 +1280,7 @@ export default function AddCandidate(props) {
                                     fullWidth
                                  >
                                     <DatePicker
+                                       format="DD/MM/YYYY"
                                        label="Billing Date"
                                        className="candidateBillingDate"
                                        sx={{ width: "100%" }}
@@ -1298,7 +1291,7 @@ export default function AddCandidate(props) {
                                              billingDate: e.target.value,
                                           });
                                        }}
-                                       value={(candidate.billingDate)}
+                                       value={candidate.billingDate}
                                     />
                                  </LocalizationProvider>
                               </Grid>
@@ -1308,6 +1301,7 @@ export default function AddCandidate(props) {
                                     fullWidth
                                  >
                                     <DatePicker
+                                       format="DD/MM/YYYY"
                                        label="Onboarding Date"
                                        className="candidateonboardingDate"
                                        sx={{ width: "100%" }}
@@ -1335,6 +1329,7 @@ export default function AddCandidate(props) {
                                     fullWidth
                                  >
                                     <DatePicker
+                                       format="DD/MM/YYYY"
                                        label="Next Tracking Date"
                                        className="candidateNXD"
                                        sx={{ width: "100%" }}

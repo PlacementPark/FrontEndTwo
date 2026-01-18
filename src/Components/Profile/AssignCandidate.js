@@ -15,9 +15,15 @@ import {
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import AxiosInstance from "../Main/AxiosInstance";
+import {
+   L1_STATUS,
+   L2_STATUS,
+   SELECT_STATUS,
+   INTERVIEW_STATUS,
+   LANGUAGE_LEVEL,
+} from "../Main/Constants";
 export default function AssignCandidate() {
    // STATES HANDLING AND VARIABLES
    const navigate = useNavigate();
@@ -51,43 +57,36 @@ export default function AssignCandidate() {
       select: [],
       l1Assessment: [],
       l2Assessment: [],
-      assignedEmployee: null,
-      createdByEmployee: null,
+      assignedEmployee: [],
+      createdByEmployee: [],
+      createdOn: null,
+      lastUpdatedOn: null,
+      assignedOn: null,
+      l1StatDate: null,
+      l2StatDate: null,
+      interviewStatDate: null,
+      tenureStatDate: null,
+      selectDate: null,
+      offerDropDate: null,
+      nonTenureDate: null,
+      invoiceCreditDate: null,
+      endTrackingDate: null,
+      source: null,
+      tag: null,
    });
 
    // API CALLS HANDLING
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/companyType?companyType=Empanelled",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const res = await AxiosInstance.get(
+               "/company/candidateCompanyType?companyType=Empanelled"
             );
-            const extraRes = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/extra/all",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
-            const empres = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/employee",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
+            const extraRes = await AxiosInstance.get("/extra/all");
+            const empres = await AxiosInstance.get("/employee");
             setEmployeeList(empres.data.employees);
-            setCompaniesList(res.data);
+
+            setCompaniesList(res.data.data);
             extraRes.data.forEach(({ _id, data }) => {
                if (_id === "Skills") setSkillsList(data);
                else if (_id === "Locations") setLocationList(data);
@@ -99,63 +98,17 @@ export default function AssignCandidate() {
       fetchData();
    }, []);
 
-   //DROP-DOWN DATA
-   const Assessment = [
-      "DND",
-      "Number Not Reachable",
-      "Wrong Number",
-      "Blacklist",
-      "NE-Fresher",
-      "NI-In-Job",
-      "NI-Experienced",
-      "NI-Convincing",
-      "WD",
-      "TAC",
-      "GOOD",
-   ];
-   const interviewStatus = [
-      "TPP Venue",
-      "Client Venue",
-      "Virtual Interview",
-      "Reject FSR Communication",
-      "Reject FSR Stability",
-      "Reject FSR Domain",
-      "Reject Amcat",
-      "Reject Amcat - Technical Issue Reject Amcat Cooling Period",
-      "Reject Versant",
-      "Reject Versant - Technical Issue",
-      "Reject Versant Cooling Period",
-      "Reject Technical",
-      "Reject Typing",
-      "Reject Group Discussion",
-      "Reject Ops/Client Communication",
-      "Reject Ops/Client Stability",
-      "Reject Ops/Client Domain",
-      "Reject Training",
-      "No Show Walk-in",
-      "No Show IC",
-      "Hold",
-      "Pending FSR",
-      "Pending Amcat",
-      "Pending Versant",
-      "Pending Technical",
-      "Pending Typing",
-      "Pending Group Discussion",
-      "Pending Ops/Client",
-      "Pending Training",
-      "Offer Drop",
-      "Select",
-   ];
-   const select = [
-      "Tracking",
-      "Non Tenure",
-      "Need to Bill",
-      "Billed",
-      "Process Rampdown",
-      "Client Rampdown",
-   ];
-
    // FUNCTIONS HANDLING
+   // Helper function to convert dayjs object to date string (YYYY-MM-DD) without time
+   const convertDateToISO = (dayjsDate) => {
+      if (!dayjsDate) return null;
+      if (dayjsDate?.$isDayjsObject) {
+         // Convert to date only (YYYY-MM-DD) by setting time to start of day
+         return dayjsDate.startOf("day").format("YYYY-MM-DD");
+      }
+      return dayjsDate;
+   };
+
    const handleAssignCandidate = async () => {
       var query = [];
       if (candidate.fullName) {
@@ -242,14 +195,18 @@ export default function AssignCandidate() {
                $in: candidate.any,
             },
          });
-      if (candidate.createdByEmployee) {
+      if (candidate.createdByEmployee.length > 0) {
          query.push({
-            createdByEmployee: candidate.createdByEmployee,
+            createdByEmployee: {
+               $in: candidate.createdByEmployee,
+            },
          });
       }
-      if (candidate.assignedEmployee) {
+      if (candidate.assignedEmployee.length > 0) {
          query.push({
-            assignedEmployee: candidate.assignedEmployee,
+            assignedEmployee: {
+               $in: candidate.assignedEmployee,
+            },
          });
       }
       if (candidate.qualification.length > 0)
@@ -262,10 +219,14 @@ export default function AssignCandidate() {
          query.push({ "qualifications.YOP": { $gt: candidate.minYOP } });
       if (candidate.maxYOP)
          query.push({ "qualifications.YOP": { $lt: candidate.maxYOP } });
-      if (candidate.mininterviewDate)
-         query.push({ interviewDate: { $gt: candidate.mininterviewDate } });
-      if (candidate.maxinterviewDate)
-         query.push({ interviewDate: { $lt: candidate.maxinterviewDate } });
+      if (candidate.mininterviewDate) {
+         const minDate = convertDateToISO(candidate.mininterviewDate);
+         if (minDate) query.push({ interviewDate: { $gt: minDate } });
+      }
+      if (candidate.maxinterviewDate) {
+         const maxDate = convertDateToISO(candidate.maxinterviewDate);
+         if (maxDate) query.push({ interviewDate: { $lt: maxDate } });
+      }
 
       if (candidate.companyName)
          query.push({
@@ -285,6 +246,60 @@ export default function AssignCandidate() {
             companyId: candidate.companyId,
             roleId: candidate.roleId,
          });
+
+      // Date field queries - Convert dayjs objects to ISO strings
+      if (candidate.createdOn) {
+         const date = convertDateToISO(candidate.createdOn);
+         if (date) query.push({ createdOn: { $gte: date } });
+      }
+      if (candidate.lastUpdatedOn) {
+         const date = convertDateToISO(candidate.lastUpdatedOn);
+         if (date) query.push({ lastUpdatedOn: { $gte: date } });
+      }
+      if (candidate.assignedOn) {
+         const date = convertDateToISO(candidate.assignedOn);
+         if (date) query.push({ assignedOn: { $gte: date } });
+      }
+      if (candidate.l1StatDate) {
+         const date = convertDateToISO(candidate.l1StatDate);
+         if (date) query.push({ l1StatDate: { $gte: date } });
+      }
+      if (candidate.l2StatDate) {
+         const date = convertDateToISO(candidate.l2StatDate);
+         if (date) query.push({ l2StatDate: { $gte: date } });
+      }
+      if (candidate.interviewStatDate) {
+         const date = convertDateToISO(candidate.interviewStatDate);
+         if (date) query.push({ interviewStatDate: { $gte: date } });
+      }
+      if (candidate.tenureStatDate) {
+         const date = convertDateToISO(candidate.tenureStatDate);
+         if (date) query.push({ tenureStatDate: { $gte: date } });
+      }
+      if (candidate.selectDate) {
+         const date = convertDateToISO(candidate.selectDate);
+         if (date) query.push({ selectDate: { $gte: date } });
+      }
+      if (candidate.offerDropDate) {
+         const date = convertDateToISO(candidate.offerDropDate);
+         if (date) query.push({ offerDropDate: { $gte: date } });
+      }
+      if (candidate.nonTenureDate) {
+         const date = convertDateToISO(candidate.nonTenureDate);
+         if (date) query.push({ nonTenureDate: { $gte: date } });
+      }
+      if (candidate.invoiceCreditDate) {
+         const date = convertDateToISO(candidate.invoiceCreditDate);
+         if (date) query.push({ invoiceCreditDate: { $gte: date } });
+      }
+      if (candidate.endTrackingDate) {
+         const date = convertDateToISO(candidate.endTrackingDate);
+         if (date) query.push({ endTrackingDate: { $gte: date } });
+      }
+
+      // String field queries
+      if (candidate.source) query.push({ source: candidate.source });
+      if (candidate.tag) query.push({ tag: candidate.tag });
       var finalq = {};
       if (query.length > 0)
          if (candidate.all.length > 0)
@@ -369,7 +384,7 @@ export default function AssignCandidate() {
                   <Grid item xs={12} md={6}>
                      <TextField
                         id="outlined-basic"
-                        label="HR Email ID"
+                        label="Email ID"
                         variant="outlined"
                         value={candidate.email}
                         onChange={(e) => {
@@ -465,6 +480,7 @@ export default function AssignCandidate() {
                   <Grid item xs={6} md={3}>
                      <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Minimum Year of Passing"
                            views={["year"]}
                            sx={{ width: "100%" }}
@@ -482,6 +498,7 @@ export default function AssignCandidate() {
                   <Grid item xs={6} md={3}>
                      <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Maximum Year of Passing"
                            views={["year"]}
                            sx={{ width: "100%" }}
@@ -592,7 +609,7 @@ export default function AssignCandidate() {
                      <Autocomplete
                         multiple
                         id="candidateL1Assessment"
-                        options={Assessment.map((a) => a)}
+                        options={L1_STATUS.map((a) => a)}
                         filterSelectedOptions
                         value={candidate.l1Assessment}
                         onChange={(e, v) =>
@@ -610,7 +627,7 @@ export default function AssignCandidate() {
                      <Autocomplete
                         multiple
                         id="candidateL2Assessment"
-                        options={Assessment.map((a) => a)}
+                        options={L2_STATUS.filter((item) => item !== null)}
                         filterSelectedOptions
                         value={candidate.l2Assessment}
                         onChange={(e, v) =>
@@ -643,25 +660,25 @@ export default function AssignCandidate() {
                   <Grid item xs={6}>
                      <Autocomplete
                         id="Companies"
-                        disableClearable
                         options={companiesList}
+                        filterSelectedOptions
                         getOptionLabel={(option) => option.companyName}
+                        renderOption={(props, item) => (
+                           <li {...props} key={item.key}>
+                              {item.companyName}
+                           </li>
+                        )}
                         onChange={(e, newValue) => {
                            setCandidate({
                               ...candidate,
-                              companyId: newValue._id,
+                              companyId: newValue?._id
+                                 ? newValue._id
+                                 : newValue,
                            });
                            setRolesList(newValue.roles);
                         }}
                         renderInput={(params) => (
-                           <TextField
-                              {...params}
-                              label="Company"
-                              InputProps={{
-                                 ...params.InputProps,
-                                 type: "search",
-                              }}
-                           />
+                           <TextField {...params} label="Company" />
                         )}
                      />
                   </Grid>
@@ -689,6 +706,7 @@ export default function AssignCandidate() {
                   <Grid item xs={6} md={3}>
                      <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Minimum Interview Date"
                            className="candidateCompanyEndDate"
                            sx={{ width: "100%" }}
@@ -706,6 +724,7 @@ export default function AssignCandidate() {
                   <Grid item xs={6} md={3}>
                      <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Maximum Interview Date"
                            className="candidateCompanyEndDate"
                            sx={{ width: "100%" }}
@@ -724,7 +743,7 @@ export default function AssignCandidate() {
                      <Autocomplete
                         multiple
                         id="candidateInterviewStatus"
-                        options={interviewStatus.map((i) => i)}
+                        options={INTERVIEW_STATUS.map((i) => i)}
                         filterSelectedOptions
                         value={candidate.interviewStatus}
                         onChange={(e, v) =>
@@ -745,7 +764,7 @@ export default function AssignCandidate() {
                      <Autocomplete
                         multiple
                         id="candidateSelect"
-                        options={select.map((s) => s)}
+                        options={SELECT_STATUS.map((s) => s)}
                         filterSelectedOptions
                         value={candidate.select}
                         onChange={(e, v) =>
@@ -764,6 +783,7 @@ export default function AssignCandidate() {
                   </Grid>
                   <Grid item xs={12} md={6}>
                      <Autocomplete
+                        multiple
                         id="Employees"
                         options={employeeList}
                         filterSelectedOptions
@@ -776,7 +796,9 @@ export default function AssignCandidate() {
                         onChange={(e, v) =>
                            setCandidate({
                               ...candidate,
-                              createdByEmployee: v?._id ? v._id : v,
+                              createdByEmployee: v?.map((a) =>
+                                 a?._id ? a._id : a
+                              ),
                            })
                         }
                         renderInput={(params) => (
@@ -786,6 +808,7 @@ export default function AssignCandidate() {
                   </Grid>
                   <Grid item xs={12} md={6}>
                      <Autocomplete
+                        multiple
                         id="Employees"
                         options={employeeList}
                         filterSelectedOptions
@@ -798,7 +821,9 @@ export default function AssignCandidate() {
                         onChange={(e, v) =>
                            setCandidate({
                               ...candidate,
-                              assignedEmployee: v?._id ? v._id : v,
+                              assignedEmployee: v?.map((a) =>
+                                 a?._id ? a._id : a
+                              ),
                            })
                         }
                         renderInput={(params) => (
@@ -806,6 +831,241 @@ export default function AssignCandidate() {
                         )}
                      />
                   </Grid>
+
+                  {/* Date Fields */}
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Created On"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.createdOn}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 createdOn: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Last Updated On"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.lastUpdatedOn}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 lastUpdatedOn: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Assigned On"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.assignedOn}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 assignedOn: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="L1 Set Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.l1StatDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 l1StatDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="L2 Set Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.l2StatDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 l2StatDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Interview Set Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.interviewStatDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 interviewStatDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Tenure Set Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.tenureStatDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 tenureStatDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Select Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.selectDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 selectDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Offer Drop Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.offerDropDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 offerDropDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Non Tenure Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.nonTenureDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 nonTenureDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="Invoice Credit Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.invoiceCreditDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 invoiceCreditDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <LocalizationProvider dateAdapter={AdapterDayjs} fullWidth>
+                        <DatePicker
+                           format="DD/MM/YYYY"
+                           label="End Tracking Date"
+                           sx={{ width: "100%" }}
+                           fullWidth
+                           value={candidate.endTrackingDate}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 endTrackingDate: e,
+                              });
+                           }}
+                        />
+                     </LocalizationProvider>
+                  </Grid>
+
+                  {/* String Fields */}
+                  <Grid item xs={6} md={3}>
+                     <TextField
+                        fullWidth
+                        label="Source"
+                        value={candidate.source || ""}
+                        onChange={(e) => {
+                           setCandidate({
+                              ...candidate,
+                              source: e.target.value,
+                           });
+                        }}
+                     />
+                  </Grid>
+                  <Grid item xs={6} md={3}>
+                     <TextField
+                        fullWidth
+                        label="Tag"
+                        value={candidate.tag || ""}
+                        onChange={(e) => {
+                           setCandidate({
+                              ...candidate,
+                              tag: e.target.value,
+                           });
+                        }}
+                     />
+                  </Grid>
+
                   <Grid item xs={7} md={9} />
                   <Grid item xs={5} md={3}>
                      <Button

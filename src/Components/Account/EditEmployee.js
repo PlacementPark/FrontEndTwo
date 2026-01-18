@@ -17,7 +17,7 @@ import {
    Grid,
    alpha,
 } from "@mui/material";
-import axios from "axios";
+
 import { DatePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -26,6 +26,7 @@ import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import ControlPointIcon from "@mui/icons-material/ControlPoint";
 import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
+import AxiosInstance from "../Main/AxiosInstance";
 
 export default function EditEmployee() {
    // STATES HANDLING AND VARIABLES
@@ -98,16 +99,7 @@ export default function EditEmployee() {
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/employee/" + id,
-
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
+            const res = await AxiosInstance.get("/employee/" + id);
             setEmployee({ ...res.data.employee });
          } catch (error) {
             console.log(error);
@@ -147,15 +139,9 @@ export default function EditEmployee() {
       if (flag) return;
       if (password) employee.password = "TPP@Pass";
       try {
-         const res = await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/" + id,
-            { ...employee },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.patch("/employee/" + id, {
+            ...employee,
+         });
          toast.success("Employee Edited Successfully");
          navigate(
             `/AccountGrid?employeeType=${res.data.employee.employeeType}`
@@ -164,45 +150,20 @@ export default function EditEmployee() {
    };
    const checkId = async (id) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/id/" + id,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/employee/id/" + id);
          if (res.data.status === true)
             toast.error("Employee ID already exists");
       } catch (error) {}
    };
    const checkNumber = async (num) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/mobile/" +
-               num,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/employee/mobile/" + num);
          if (res.data.status === true) toast.error("Number already exists");
       } catch (error) {}
    };
    const checkMail = async (num) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/mail/" + num,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/employee/mail/" + num);
          if (res.data.status === true) toast.error("Email already exists");
       } catch (error) {}
    };
@@ -293,6 +254,7 @@ export default function EditEmployee() {
                         }
                      >
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Date Of Birth"
                            fullWidth
                            sx={{ width: "100%" }}
@@ -474,6 +436,7 @@ export default function EditEmployee() {
                         }
                      >
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Date Of Joining"
                            value={dayjs(employee.DOJ)}
                            sx={{ width: "100%" }}

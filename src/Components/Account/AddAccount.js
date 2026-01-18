@@ -19,11 +19,12 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import dayjs from "dayjs";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import axios from "axios";
+
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ControlPointIcon from "@mui/icons-material/ControlPoint";
 import RemoveCircleOutlineOutlinedIcon from "@mui/icons-material/RemoveCircleOutlineOutlined";
+import AxiosInstance from "../Main/AxiosInstance";
 
 export default function AddAccount() {
    // STATES HANDLING AND VARIABLES
@@ -123,15 +124,7 @@ export default function AddAccount() {
       }
       if (flag) return;
       try {
-         const res = await axios.post(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee",
-            { ...employee },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.post("/employee", { ...employee });
          toast.success("Employee Added Successfully");
          navigate(
             `/AccountGrid?employeeType=${res.data.employee.employeeType}`
@@ -141,45 +134,20 @@ export default function AddAccount() {
 
    const checkId = async (id) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/id/" + id,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/employee/id/" + id);
          if (res.data.status === true)
             toast.error("Employee ID already exists");
       } catch (error) {}
    };
    const checkNumber = async (num) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/mobile/" +
-               num,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/employee/mobile/" + num);
          if (res.data.status === true) toast.error("Number already exists");
       } catch (error) {}
    };
    const checkMail = async (num) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/employee/mail/" + num,
-
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/employee/mail/" + num);
          if (res.data.status === true) toast.error("Email already exists");
       } catch (error) {}
    };
@@ -260,6 +228,7 @@ export default function AddAccount() {
                         }
                      >
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Date Of Birth"
                            sx={{ width: "100%" }}
                            fullWidth
@@ -436,6 +405,7 @@ export default function AddAccount() {
                         }
                      >
                         <DatePicker
+                           format="DD/MM/YYYY"
                            label="Date Of Joining"
                            value={dayjs(employee.DOJ)}
                            sx={{ width: "100%" }}

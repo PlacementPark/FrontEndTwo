@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+
 import { useEffect, useState } from "react";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../Assets/Features/User/userSlice";
+import AxiosInstance from "./AxiosInstance";
 const ProtectedRoute = ({ children }) => {
    const [check, setCheck] = useState(false);
    const dispatch = useDispatch();
@@ -12,14 +13,7 @@ const ProtectedRoute = ({ children }) => {
       if (!token) navigate("/login");
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/status",
-               {
-                  headers: {
-                     authorization: token,
-                  },
-               }
-            );
+            const res = await AxiosInstance.get("/status");
 
             dispatch(
                setUser({

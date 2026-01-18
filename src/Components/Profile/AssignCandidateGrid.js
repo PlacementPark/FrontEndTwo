@@ -23,19 +23,22 @@ import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
 import dayjs from "dayjs";
-import axios from "axios";
 import { useLocation } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ExcelExport from "../Main/ExcelExport";
 import { flatten } from "flat";
+import { toast } from "react-toastify";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityTwoToneIcon from "@mui/icons-material/VisibilityTwoTone";
 import BorderColorTwoToneIcon from "@mui/icons-material/BorderColorTwoTone";
 import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
+import AxiosInstance from "../Main/AxiosInstance";
 
 export default function AssignCandidateGrid(props) {
    // STATES HANDLING AND VARIABLES
    const [open, setOpen] = React.useState(false);
+   const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+   const [selectedIds, setSelectedIds] = React.useState([]);
    const { employeeType, userid } = useSelector((state) => state.user);
    const gridapi = React.useRef();
    const location = useLocation();
@@ -55,25 +58,11 @@ export default function AssignCandidateGrid(props) {
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const candidates = await axios.post(
-               "https://tpp-backend-eura.onrender.com/api/v1/candidate/candidate/assignSearch",
-               { query: { ...location.state.query } },
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const candidates = await AxiosInstance.post(
+               "/candidate/candidate/assignSearch",
+               { query: { ...location.state.query } }
             );
-            const empres = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/employee",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
+            const empres = await AxiosInstance.get("/employee");
             setEmployeeList(empres.data.employees);
             setPotentialLeadList(candidates.data.candidates);
          } catch (error) {
@@ -232,17 +221,51 @@ export default function AssignCandidateGrid(props) {
 
    const handleDelete = async (id) => {
       try {
-         axios.delete(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/" + id,
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         await AxiosInstance.delete("/candidate/" + id);
          setTableData(tableData.filter((d) => d._id !== id));
+         setPotentialLeadList(potentialLeadList.filter((d) => d._id !== id));
          handleClose();
       } catch (error) {}
+   };
+
+   const handleBulkDelete = () => {
+      const ids = gridapi.current.api.getSelectedRows().map((row) => row._id);
+      if (ids.length === 0) {
+         toast.error("No Rows selected");
+         return;
+      }
+      setSelectedIds(ids);
+      setBulkDeleteOpen(true);
+   };
+
+   const confirmBulkDelete = async () => {
+      const toastId = toast.loading("Deleting candidates...");
+      try {
+         await AxiosInstance.post("/candidate/bulkDelete", {
+            ids: selectedIds,
+         });
+         setPotentialLeadList((prev) =>
+            prev.filter((d) => !selectedIds.includes(d._id))
+         );
+         setTableData((prev) =>
+            prev.filter((d) => !selectedIds.includes(d._id))
+         );
+         toast.update(toastId, {
+            render: `Successfully deleted ${selectedIds.length} candidate(s)`,
+            type: "success",
+            isLoading: false,
+            autoClose: 4000,
+         });
+         setBulkDeleteOpen(false);
+         setSelectedIds([]);
+      } catch (error) {
+         toast.update(toastId, {
+            render: "Failed to delete candidates",
+            type: "error",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      }
    };
 
    const handleAssign = async () => {
@@ -272,17 +295,9 @@ export default function AssignCandidateGrid(props) {
          ind += count;
       }
       try {
-         await axios.post(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/candidate/assign",
-            {
-               list: assignedData,
-            },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         await AxiosInstance.post("/candidate/candidate/assign", {
+            list: assignedData,
+         });
          setTimeout(
             () =>
                setPotentialLeadList(
@@ -296,7 +311,43 @@ export default function AssignCandidateGrid(props) {
          );
       } catch (error) {}
    };
-
+   const handleExcelExport = async () => {
+      const selectedIds = gridapi.current.api
+         .getSelectedRows()
+         .map((row) => row._id);
+      if (selectedIds.length === 0) {
+         toast.error("No Rows selected");
+         return;
+      }
+      const toastId = toast.loading("Exporting Excel...");
+      try {
+         const response = await AxiosInstance.post(
+            "/candidate/excelExport",
+            { ids: selectedIds, name: fileName },
+            { responseType: "blob" }
+         );
+         const url = window.URL.createObjectURL(new Blob([response.data]));
+         const link = document.createElement("a");
+         link.href = url;
+         link.setAttribute("download", `${fileName || "candidates"}.xlsx`);
+         document.body.appendChild(link);
+         link.click();
+         link.remove();
+         toast.update(toastId, {
+            render: "Excel exported successfully!",
+            type: "success",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      } catch (error) {
+         toast.update(toastId, {
+            render: "Failed to export Excel",
+            type: "error",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      }
+   };
    //JSX CODE
    return (
       <>
@@ -426,11 +477,29 @@ export default function AssignCandidateGrid(props) {
                         />
                      </Grid>
                      <Grid item xs={4.5} sm={2.5} md={2}>
-                        <ExcelExport
-                           excelData={potentialLeadList.map((l) => flatten(l))}
-                           fileName={fileName}
-                        />
+                        <Button
+                           fullWidth
+                           variant="contained"
+                           color="inherit"
+                           className="gridButton"
+                           onClick={handleExcelExport}
+                        >
+                           Export Excel
+                        </Button>
                      </Grid>
+                     {isAdmin && (
+                        <Grid item xs={12} sm={3} md={2}>
+                           <Button
+                              fullWidth
+                              variant="contained"
+                              color="error"
+                              className="gridButton"
+                              onClick={handleBulkDelete}
+                           >
+                              Bulk Delete
+                           </Button>
+                        </Grid>
+                     )}
                      <Grid item xs={12}>
                         {warning && (
                            <Alert
@@ -549,6 +618,71 @@ export default function AssignCandidateGrid(props) {
                   size="large"
                   sx={{ backgroundColor: alpha("#0000FF", 0.5) }}
                   onClick={handleClose}
+               >
+                  Cancel
+               </Button>
+            </DialogActions>
+         </Dialog>
+
+         {/* Bulk Delete Dialog */}
+         <Dialog
+            open={bulkDeleteOpen}
+            onClose={() => setBulkDeleteOpen(false)}
+            sx={{
+               backgroundColor: "transparent",
+               "& .MuiDialog-paper": {
+                  backgroundColor: "transparent",
+                  backdropFilter: "blur(2px)",
+                  boxShadow: "none",
+                  color: "white",
+               },
+            }}
+         >
+            <DialogTitle
+               sx={{
+                  textTransform: "uppercase",
+                  letterSpacing: 6,
+               }}
+            >
+               Confirm Bulk Delete
+            </DialogTitle>
+            <IconButton
+               aria-label="close"
+               onClick={() => setBulkDeleteOpen(false)}
+               sx={{
+                  position: "absolute",
+                  right: 8,
+                  top: 8,
+                  color: (theme) => theme.palette.grey[500],
+               }}
+            >
+               <CloseIcon />
+            </IconButton>
+            <DialogContent dividers className="dw">
+               <Typography gutterBottom sx={{ fontWeight: "bold" }}>
+                  Are you sure you want to delete {selectedIds.length}{" "}
+                  candidate(s)?
+               </Typography>
+               <Typography
+                  sx={{ fontWeight: "bold", marginTop: "1vh", color: "red" }}
+               >
+                  This action cannot be undone.
+               </Typography>
+            </DialogContent>
+            <DialogActions>
+               <Button
+                  variant="contained"
+                  size="large"
+                  color="error"
+                  sx={{ backgroundColor: alpha("#FF0000", 0.7) }}
+                  onClick={confirmBulkDelete}
+               >
+                  Delete All
+               </Button>
+               <Button
+                  variant="contained"
+                  size="large"
+                  onClick={() => setBulkDeleteOpen(false)}
                >
                   Cancel
                </Button>

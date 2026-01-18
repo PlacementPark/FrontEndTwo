@@ -16,10 +16,10 @@ import {
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
 import "ag-grid-community/styles/ag-theme-quartz.css";
-import axios from "axios";
 import ExcelExport from "../Main/ExcelExport";
 import { flatten } from "flat";
 import { toast } from "react-toastify";
+import AxiosInstance from "../Main/AxiosInstance";
 
 export default function PotentialLeads() {
    // STATES HANDLING AND VARIABLES
@@ -95,23 +95,12 @@ export default function PotentialLeads() {
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/companyType?companyType=Empanelled",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const res = await AxiosInstance.get(
+               "/company/candidateCompanyType?companyType=Empanelled"
             );
-            const empres = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/employee",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const empres = await AxiosInstance.get(
+               "/employee",
+               
             );
 
             setCompaniesList(res.data);
@@ -258,8 +247,8 @@ export default function PotentialLeads() {
       });
 
       try {
-         const res = await axios.post(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/candidate/potentialleads",
+         const res = await AxiosInstance.post(
+            "/candidate/candidate/potentialleads",
             {
                query: query,
                roleId: searchParams.role,
@@ -302,8 +291,8 @@ export default function PotentialLeads() {
          ind += count;
       }
       try {
-         await axios.post(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/candidate/assign",
+         await AxiosInstance.post(
+            "/candidate/candidate/assign",
             {
                list: assignedData,
                companyId: searchParams.company,

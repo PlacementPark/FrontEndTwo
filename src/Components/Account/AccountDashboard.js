@@ -1,174 +1,191 @@
 import React, { useEffect, useState } from "react";
 import { Grid, Card, CardContent, Typography, Box } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import AxiosInstance from "../Main/AxiosInstance";
 
-export default function AccountDashboard() {
-   const navigate = useNavigate();
-   const [data, setData] = useState({});
-   useEffect(() => {
-      const fetchData = async () => {
-         try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/employee/counts/counts",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
+export default function EmployeeDashboard() {
+  const navigate = useNavigate();
+  const [data, setData] = useState({});
 
-            if (!res) console.log("Something went wrong");
-            const counts = {};
-            for (const c of res.data) {
-               counts[c["_id"]] = c["count"];
-            }
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await AxiosInstance.get("/employee/counts/counts");
+        if (!res) console.log("Something went wrong");
 
-            setData(counts);
-         } catch (error) {
-            console.log(error);
-         }
-      };
-      fetchData();
-   }, []);
+        const counts = {};
+        res.data.forEach((c) => {
+          counts[c["_id"]] = c["count"];
+        });
+        setData(counts);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetchData();
+  }, []);
 
-   //CARDS INLINE CSS
-   const cardsStyle = {
-      backgroundColor: "transparent",
-      backdropFilter: "blur(70px)",
-      color: "white",
-      borderRadius: "20px",
-      borderLeftStyle: "solid",
-      borderLeftWidth: "0.5vh",
-   };
+  // Modern Card Styles
+  const cardsStyle = {
+    minHeight: "9vh",
+    maxHeight: "13vh",
+    backgroundColor: "transparent",
+    backdropFilter: "blur(70px)",
+    color: "white",
+    borderRadius: "16px",
+    borderLeftStyle: "solid",
+    borderLeftWidth: "0.4vh",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "center",
+    padding: "1rem 1.2rem",
+    boxShadow: "0 6px 16px rgba(0,0,0,0.2)",
+    transition: "all 0.4s ease",
+    cursor: "pointer",
+    "&:hover": {
+      transform: "translateY(-6px) scale(1.04)",
+      boxShadow: "0 12px 28px rgba(0,0,0,0.35)",
+      background: "rgba(255, 255, 255, 0.1)",
+      color: "#00FFEF",
+      borderColor: "#FFF700",
+      borderLeftWidth: "0.7vh",
+      letterSpacing: "0.2vh",
+    },
+  };
 
-   //CSS HANDLING FOR CARDS/BUTTON/PAGE ON XS AND SM
-   const screenWidth = window.innerWidth;
-   const inlineStyles = {
-      paddingTop: "10vh",
-      paddingBottom: "2vh",
-      ...(screenWidth <= 576 && { marginLeft: "5%", width: "90%" }), // xs screens
-      ...(screenWidth > 576 && { marginLeft: "20%", width: "60%" }), // xs+ screens
-   };
+  const cardItems = [
+    {
+      label: "RECRUITER",
+      color: "#00FFFF",
+      path: "/AccountGrid?employeeType=Recruiter",
+      count: data["Recruiter"] || 0,
+    },
+    {
+      label: "TEAM LEAD",
+      color: "#00FF00",
+      path: "/AccountGrid?employeeType=Teamlead",
+      count: data["Teamlead"] || 0,
+    },
+    {
+      label: "MANAGER",
+      color: "#FF5C00",
+      path: "/AccountGrid?employeeType=Manager",
+      count: data["Manager"] || 0,
+    },
+    {
+      label: "INTERN",
+      color: "#FF0000",
+      path: "/AccountGrid?employeeType=Intern",
+      count: data["Intern"] || 0,
+    },
+  ];
 
-   return (
-      <>
-         <div style={inlineStyles}>
-            <Grid container>
-               <Grid item sm={2} />
-               <Grid item xs={12} sm={8}>
-                  <div
-                     className="dbButton"
-                     onClick={() => navigate("/addaccount")}
-                  >
-                     <Typography variant="h7" color="white" fontWeight="bold">
-                        ADD EMPLOYEE
-                     </Typography>
-                  </div>
-               </Grid>
-            </Grid>
-            {/* Data Grid (70%) */}
-            <Grid
-               container
-               columnSpacing={5}
-               rowSpacing={1}
-               sx={{ paddingTop: "5vh" }}
+  return (
+    <Box
+      sx={{
+        paddingTop: "10vh",
+        paddingX: { xs: "5%", md: "20%" },
+        paddingBottom: "3vh",
+      }}
+    >
+      {/* Add Employee Button */}
+      <Grid container spacing={1} justifyContent="center">
+        <Grid item xs={6}>
+          <div
+            className="dbButton"
+            onClick={() => navigate("/addaccount")}
+            style={{
+              textAlign: "center",
+              marginBottom: "3vh",
+              cursor: "pointer",
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              color="white"
+              fontWeight="light"
+              letterSpacing={2.5}
+              sx={{
+                fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.9rem" },
+                textAlign: "center",
+                whiteSpace: "normal",
+                lineHeight: 1.2,
+              }}
             >
-               <Grid item xs={12} sm={6}>
-                  <Card
-                     sx={{ ...cardsStyle, borderLeftColor: "#00FFFF" }}
-                     onClick={() =>
-                        navigate("/AccountGrid?employeeType=Recruiter")
-                     }
-                  >
-                     <Box>
-                        <CardContent sx={{ maxHeight: "5vh" }}>
-                           <Typography variant="h7" fontWeight="bold">
-                              RECRUITER
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                     <Box>
-                        <CardContent>
-                           <Typography variant="h5">
-                              {data["Recruiter"] ? data["Recruiter"] : 0}
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                  </Card>
-               </Grid>
-               <Grid item xs={12} sm={6}>
-                  <Card
-                     sx={{ ...cardsStyle, borderLeftColor: "#00FF00" }}
-                     onClick={() =>
-                        navigate("/AccountGrid?employeeType=Teamlead")
-                     }
-                  >
-                     <Box>
-                        <CardContent sx={{ maxHeight: "5vh" }}>
-                           <Typography variant="h7" fontWeight="bold">
-                              TEAM LEAD
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                     <Box>
-                        <CardContent>
-                           <Typography variant="h5">
-                              {data["Teamlead"] ? data["Teamlead"] : 0}
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                  </Card>
-               </Grid>
-               <Grid item xs={12} sm={6}>
-                  <Card
-                     sx={{ ...cardsStyle, borderLeftColor: "#FF5C00" }}
-                     onClick={() =>
-                        navigate("/AccountGrid?employeeType=Manager")
-                     }
-                  >
-                     <Box>
-                        <CardContent sx={{ maxHeight: "5vh" }}>
-                           <Typography variant="h7" fontWeight="bold">
-                              MANAGER
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                     <Box>
-                        <CardContent>
-                           <Typography variant="h5">
-                              {data["Manager"] ? data["Manager"] : 0}
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                  </Card>
-               </Grid>
-               <Grid item xs={12} sm={6}>
-                  <Card
-                     sx={{ ...cardsStyle, borderLeftColor: "#FF0000" }}
-                     onClick={() =>
-                        navigate("/AccountGrid?employeeType=Intern")
-                     }
-                  >
-                     <Box>
-                        <CardContent sx={{ maxHeight: "5vh" }}>
-                           <Typography variant="h7" fontWeight="bold">
-                              INTERN
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                     <Box>
-                        <CardContent>
-                           <Typography variant="h5">
-                              {data["Intern"] ? data["Intern"] : 0}
-                           </Typography>
-                        </CardContent>
-                     </Box>
-                  </Card>
-               </Grid>
-            </Grid>
-         </div>
-      </>
-   );
+              ADD EMPLOYEE
+            </Typography>
+          </div>
+        </Grid>
+        <Grid item xs={6}>
+          <div
+            className="dbButton"
+            onClick={() => navigate("/searchaccount")}
+            style={{
+              textAlign: "center",
+              marginBottom: "3vh",
+              cursor: "pointer",
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              color="white"
+              fontWeight="light"
+              letterSpacing={2.5}
+              sx={{
+                fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.9rem" },
+                textAlign: "center",
+                whiteSpace: "normal",
+                lineHeight: 1.2,
+              }}
+            >
+              SEARCH EMPLOYEE
+            </Typography>
+          </div>
+        </Grid>
+      </Grid>
+
+      {/* Employee Type Cards */}
+      <Grid container spacing={3}>
+        {cardItems.map((item, index) => (
+          <Grid item xs={12} sm={6} key={index}>
+            <Card
+              sx={{
+                ...cardsStyle,
+                borderLeftColor: item.color,
+                paddingTop: "6.5vh",
+              }}
+              onClick={() => navigate(item.path)}
+            >
+              <CardContent sx={{ padding: 0 }}>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight="light"
+                  sx={{
+                    fontSize: { xs: "0.9rem", sm: "0.95rem", md: "1rem" },
+                    whiteSpace: "normal",
+                    overflowWrap: "break-word",
+                    lineHeight: 1.3,
+                    textAlign: "left",
+                  }}
+                >
+                  {item.label}
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: { xs: "1.3rem", sm: "1.5rem", md: "1.7rem" },
+                    textAlign: "left",
+                    fontWeight: "bold",
+                  }}
+                  mt={1}
+                >
+                  {item.count}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
 }

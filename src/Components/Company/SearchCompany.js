@@ -28,17 +28,17 @@ import BorderColorTwoToneIcon from "@mui/icons-material/BorderColorTwoTone";
 import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
 import AxiosInstance from "../Main/AxiosInstance";
 
-export default function SearchProfile() {
+export default function SearchCompany() {
    // STATES HANDLING AND VARIABLES
    const { employeeType, userid } = useSelector((state) => state.user);
    const empId = userid;
-   const rtAccess = ["Recruiter", "Intern"].includes(employeeType);
+   const access = !["Recruiter", "Teamlead", "Intern"].includes(employeeType);
    const isAdmin = employeeType === "Admin";
    const navigate = useNavigate();
    const [searchParams, setSearchParams] = React.useState({
-      name: "",
-      mobile: "",
-      email: "",
+      companyName: "",
+      HRMobile: "",
+      HREmail: "",
    });
    const [tableData, setTableData] = React.useState([]);
    const [deleteData, setDeleteData] = React.useState({});
@@ -53,39 +53,70 @@ export default function SearchProfile() {
    };
 
    const handleDelete = async (id) => {
+      const toastId = toast.loading("Deleting company...");
       try {
-         await AxiosInstance.delete("/candidate/" + id);
+         await AxiosInstance.delete("/company/" + id);
          setTableData(tableData.filter((d) => d._id !== id));
          handleClose();
-      } catch (error) {}
+         toast.update(toastId, {
+            render: "Company deleted successfully",
+            type: "success",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      } catch (error) {
+         toast.update(toastId, {
+            render: "Failed to delete company",
+            type: "error",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      }
    };
 
    const handleSearch = async () => {
       if (
-         searchParams.name === "" &&
-         searchParams.mobile === "" &&
-         searchParams.email === ""
+         searchParams.companyName === "" &&
+         searchParams.HRMobile === "" &&
+         searchParams.HREmail === ""
       ) {
-         toast.warning("Handle");
+         toast.warning("Please enter at least one search parameter");
          return;
       }
 
+      const toastId = toast.loading("Searching companies...");
       try {
-         var nameLen = searchParams.name.length;
-         var newName = "";
-         for (var i = 0; i < nameLen; i++) {
-            if (searchParams.name[i] === "(" || searchParams.name[i] === "(")
+         const nameLen = searchParams.companyName.length;
+         let newName = "";
+         for (let i = 0; i < nameLen; i++) {
+            if (
+               searchParams.companyName[i] === "(" ||
+               searchParams.companyName[i] === "("
+            )
                newName += "\\";
-            newName += searchParams.name[i];
+            newName += searchParams.companyName[i];
          }
-         const res = await AxiosInstance.post("/candidate/search", {
-            ...searchParams,
-            name: newName,
+         const res = await AxiosInstance.post("/company/search", {
+            companyName: newName,
+            HRMobile: searchParams.HRMobile,
+            HREmail: searchParams.HREmail,
          });
-         //log the array of candidates
-         console.log("Candidate Data:", res.data);
+         console.log("Company Data:", res.data);
          setTableData(res.data);
-      } catch (error) {}
+         toast.update(toastId, {
+            render: `Found ${res.data.length} companies`,
+            type: "success",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      } catch (error) {
+         toast.update(toastId, {
+            render: "Search failed",
+            type: "error",
+            isLoading: false,
+            autoClose: 4000,
+         });
+      }
    };
 
    //console.log(assignedEmployee.name);
@@ -102,64 +133,41 @@ export default function SearchProfile() {
    }, []);
 
    const column = [
-      { headerName: "Candidate Name", field: "fullName" },
-      { headerName: "Candidate ID", field: "candidateId" },
-      { headerName: "Candidate Number", field: "mobile", sortable: false },
-      { headerName: "Created By", field:"createdByEmployee.name"},
-      { headerName: "Assigned to", field:"assignedEmployee.name"},
-      { headerName: "Created & Assigned Dates", field: "" },
-      { headerName: "L1 Status", field:"l1Assessment"},
-      { headerName: "L2 Status", field:"l2Assessment"},
-      { headerName: "Interview Status", field:"interviewStatus"},
       {
          headerName: "Actions",
-         width: isAdmin ? "350px" : "250px",
-         field: "assignedEmployee",
-
-         comparator: (a, b) => {
-            if (a === empId && b !== empId) return -1;
-            else if (b === empId && a !== empId) return 1;
-            else if (a === undefined || a === null) return 1;
-            else if (b === undefined || b === null) return -1;
-            else return 0;
-         },
+         width: access ? 200 : 100,
          cellRenderer: (props) => {
+            if (!props.data) return null;
             return (
-               <>
-                  <Grid container columnSpacing={1}>
-                     <Grid item xs={isAdmin ? 4 : 6}>
-                        <IconButton
-                           color="primary"
-                           href={`/EditCandidate/${props.data._id}?edit=false`}
-                        >
-                           <VisibilityTwoToneIcon />
-                        </IconButton>
-                     </Grid>
-                     <Grid item xs={isAdmin ? 4 : 6}>
-                        <IconButton
-                           size="small"
-                           color="secondary"
-                           href={`/EditCandidate/${props.data._id}?edit=true`}
-                           disabled={
-                              !rtAccess
-                                 ? false
-                                 : props.data.assignedEmployee === empId
-                                 ? false
-                                 : true
-                           }
-                        >
-                           <BorderColorTwoToneIcon />
-                        </IconButton>
-                     </Grid>
-                     {isAdmin && (
+               <Grid container columnSpacing={1}>
+                  <Grid item xs={access ? 4 : 12}>
+                     <IconButton
+                        color="primary"
+                        size="small"
+                        href={`/EditEmpanelled/${props.data._id}?edit=false`}
+                     >
+                        <VisibilityTwoToneIcon />
+                     </IconButton>
+                  </Grid>
+                  {access && (
+                     <>
+                        <Grid item xs={4}>
+                           <IconButton
+                              size="small"
+                              color="warning"
+                              href={`/EditEmpanelled/${props.data._id}?edit=true`}
+                           >
+                              <BorderColorTwoToneIcon />
+                           </IconButton>
+                        </Grid>
                         <Grid item xs={4}>
                            <IconButton
                               size="small"
                               color="error"
                               onClick={() => {
                                  setDeleteData({
-                                    name: props.data.fullName,
-                                    id: props.data.candidateId,
+                                    name: props.data.companyName,
+                                    id: props.data.companyId,
                                     _id: props.data._id,
                                  });
                                  handleClickOpen();
@@ -168,11 +176,64 @@ export default function SearchProfile() {
                               <DeleteSweepTwoToneIcon />
                            </IconButton>
                         </Grid>
-                     )}
-                  </Grid>
-               </>
+                     </>
+                  )}
+               </Grid>
             );
          },
+      },
+      {
+         headerName: "Company Name",
+         field: "companyName",
+         headerCheckboxSelection: true,
+         checkboxSelection: true,
+         headerCheckboxSelectionFilteredOnly: true,
+      },
+      {
+         headerName: "Company ID",
+         field: "companyId",
+      },
+      {
+         headerName: "HR Name",
+         field: "HR.HRName",
+         hide: !access,
+         valueGetter: (params) =>
+            params.data?.HR?.map((hr) => hr.HRName).join(", "),
+      },
+      {
+         headerName: "HR Mobile",
+         field: "HR.HRMobile",
+         hide: !access,
+         valueGetter: (params) =>
+            params.data?.HR?.map((hr) => hr.HRMobile?.join(", ")).join("; "),
+      },
+      {
+         headerName: "HR Email",
+         field: "HR.HREmail",
+         hide: !access,
+         valueGetter: (params) =>
+            params.data?.HR?.map((hr) => hr.HREmail).join(", "),
+      },
+      {
+         headerName: "Company Type",
+         field: "companyType",
+      },
+      {
+         headerName: "About",
+         field: "about",
+      },
+      {
+         headerName: "Remarks",
+         field: "remarks",
+      },
+      {
+         headerName: "Response",
+         field: "response",
+      },
+      {
+         headerName: "Empanelled",
+         field: "empanelled",
+         valueGetter: (params) => (params.data?.empanelled ? "Yes" : "No"),
       },
    ];
 
@@ -200,7 +261,7 @@ export default function SearchProfile() {
                      height: "7.5vh",
                      color: "white",
                   }}
-                  title="SEARCH PROFILE"
+                  title="SEARCH COMPANIES"
                   titleTypographyProps={{
                      sx: {
                         fontSize: "2.8vh",
@@ -212,14 +273,14 @@ export default function SearchProfile() {
                   <Grid container rowSpacing={2} columnSpacing={1}>
                      <Grid item xs={12} md={4}>
                         <TextField
-                           label="Name"
+                           label="Company Name"
                            variant="outlined"
                            fullWidth
-                           value={searchParams.name}
+                           value={searchParams.companyName}
                            onChange={(e) =>
                               setSearchParams({
                                  ...searchParams,
-                                 name: e.target.value,
+                                 companyName: e.target.value,
                               })
                            }
                         />
@@ -227,28 +288,28 @@ export default function SearchProfile() {
                      <Grid item xs={12} md={4}>
                         <TextField
                            type="number"
-                           label="Mobile Number"
+                           label="HR Mobile Number"
                            variant="outlined"
                            fullWidth
-                           value={searchParams.mobile}
+                           value={searchParams.HRMobile}
                            onChange={(e) =>
                               setSearchParams({
                                  ...searchParams,
-                                 mobile: e.target.value,
+                                 HRMobile: e.target.value,
                               })
                            }
                         />
                      </Grid>
                      <Grid item xs={12} md={4}>
                         <TextField
-                           label="Email ID"
+                           label="HR Email ID"
                            variant="outlined"
                            fullWidth
-                           value={searchParams.email}
+                           value={searchParams.HREmail}
                            onChange={(e) =>
                               setSearchParams({
                                  ...searchParams,
-                                 email: e.target.value,
+                                 HREmail: e.target.value,
                               })
                            }
                         />

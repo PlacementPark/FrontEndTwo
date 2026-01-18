@@ -15,6 +15,7 @@ import {
    DialogTitle,
    Dialog,
    IconButton,
+   Autocomplete,
 } from "@mui/material";
 import { AgGridReact } from "ag-grid-react";
 import "ag-grid-community/styles/ag-grid.css";
@@ -25,10 +26,14 @@ import { toast } from "react-toastify";
 import CloseIcon from "@mui/icons-material/Close";
 import VisibilityTwoToneIcon from "@mui/icons-material/VisibilityTwoTone";
 import BorderColorTwoToneIcon from "@mui/icons-material/BorderColorTwoTone";
+import CheckCircleTwoToneIcon from "@mui/icons-material/CheckCircleTwoTone";
+import CancelTwoToneIcon from "@mui/icons-material/CancelTwoTone";
 import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
 import AxiosInstance from "../Main/AxiosInstance";
-
-export default function SearchProfile() {
+import {
+   EMPLOYEE_TYPE
+} from "../Main/Constants";
+export default function SearchAccount() {
    // STATES HANDLING AND VARIABLES
    const { employeeType, userid } = useSelector((state) => state.user);
    const empId = userid;
@@ -39,6 +44,7 @@ export default function SearchProfile() {
       name: "",
       mobile: "",
       email: "",
+      employeeType: [],
    });
    const [tableData, setTableData] = React.useState([]);
    const [deleteData, setDeleteData] = React.useState({});
@@ -54,7 +60,7 @@ export default function SearchProfile() {
 
    const handleDelete = async (id) => {
       try {
-         await AxiosInstance.delete("/candidate/" + id);
+         await AxiosInstance.delete("/employee/" + id);
          setTableData(tableData.filter((d) => d._id !== id));
          handleClose();
       } catch (error) {}
@@ -64,7 +70,8 @@ export default function SearchProfile() {
       if (
          searchParams.name === "" &&
          searchParams.mobile === "" &&
-         searchParams.email === ""
+         searchParams.email === "" &&
+         searchParams.employeeType.length === 0
       ) {
          toast.warning("Handle");
          return;
@@ -78,12 +85,12 @@ export default function SearchProfile() {
                newName += "\\";
             newName += searchParams.name[i];
          }
-         const res = await AxiosInstance.post("/candidate/search", {
+         const res = await AxiosInstance.post("/employee/search", {
             ...searchParams,
             name: newName,
          });
          //log the array of candidates
-         console.log("Candidate Data:", res.data);
+
          setTableData(res.data);
       } catch (error) {}
    };
@@ -102,73 +109,99 @@ export default function SearchProfile() {
    }, []);
 
    const column = [
-      { headerName: "Candidate Name", field: "fullName" },
-      { headerName: "Candidate ID", field: "candidateId" },
-      { headerName: "Candidate Number", field: "mobile", sortable: false },
-      { headerName: "Created By", field:"createdByEmployee.name"},
-      { headerName: "Assigned to", field:"assignedEmployee.name"},
-      { headerName: "Created & Assigned Dates", field: "" },
-      { headerName: "L1 Status", field:"l1Assessment"},
-      { headerName: "L2 Status", field:"l2Assessment"},
-      { headerName: "Interview Status", field:"interviewStatus"},
+      {
+         headerName: "Employee Name",
+         field: "name",
+         width: "280px",
+         headerCheckboxSelection: true,
+         checkboxSelection: true,
+         headerCheckboxSelectionFilteredOnly: true,
+      },
+      { headerName: "Employee ID", field: "employeeId", width: "180px" },
+      {
+         headerName: "Employee Number",
+         field: "mobile",
+         width: "200px",
+         sortable: false,
+      },
+      {
+         headerName: "Employee Type",
+         field: "employeeType",
+         width: "200px",
+         
+      },
+      {
+         headerName: "Employee Status",
+         width: "180px",
+         cellRenderer: (props) => {
+            return (
+               <>
+                  {props.data.status ? (
+                     <>
+                        <IconButton color="success">
+                           <CheckCircleTwoToneIcon />
+                        </IconButton>
+                     </>
+                  ) : (
+                     <>
+                        <IconButton color="error">
+                           <CancelTwoToneIcon />
+                        </IconButton>
+                     </>
+                  )}
+               </>
+            );
+         },
+      },
       {
          headerName: "Actions",
-         width: isAdmin ? "350px" : "250px",
-         field: "assignedEmployee",
-
-         comparator: (a, b) => {
-            if (a === empId && b !== empId) return -1;
-            else if (b === empId && a !== empId) return 1;
-            else if (a === undefined || a === null) return 1;
-            else if (b === undefined || b === null) return -1;
-            else return 0;
-         },
+         width: "200px",
          cellRenderer: (props) => {
             return (
                <>
                   <Grid container columnSpacing={1}>
-                     <Grid item xs={isAdmin ? 4 : 6}>
+                     <Grid item xs={4}>
                         <IconButton
                            color="primary"
-                           href={`/EditCandidate/${props.data._id}?edit=false`}
+                           size="small"
+                           onClick={() =>
+                              navigate(
+                                 `/EditEmployee/${props.data._id}?edit=false`
+                              )
+                           }
                         >
                            <VisibilityTwoToneIcon />
                         </IconButton>
                      </Grid>
-                     <Grid item xs={isAdmin ? 4 : 6}>
+                     <Grid item xs={4}>
                         <IconButton
                            size="small"
                            color="secondary"
-                           href={`/EditCandidate/${props.data._id}?edit=true`}
-                           disabled={
-                              !rtAccess
-                                 ? false
-                                 : props.data.assignedEmployee === empId
-                                 ? false
-                                 : true
+                           onClick={() =>
+                              navigate(
+                                 `/EditEmployee/${props.data._id}?edit=true`
+                              )
                            }
                         >
                            <BorderColorTwoToneIcon />
                         </IconButton>
                      </Grid>
-                     {isAdmin && (
-                        <Grid item xs={4}>
-                           <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => {
-                                 setDeleteData({
-                                    name: props.data.fullName,
-                                    id: props.data.candidateId,
-                                    _id: props.data._id,
-                                 });
-                                 handleClickOpen();
-                              }}
-                           >
-                              <DeleteSweepTwoToneIcon />
-                           </IconButton>
-                        </Grid>
-                     )}
+                     <Grid item xs={4}>
+                        <IconButton
+                           size="small"
+                           color="error"
+                           onClick={() => {
+                              setDeleteData({
+                                 name: props.data.name,
+                                 id: props.data.employeeId,
+                                 _id: props.data._id,
+                              });
+                              handleClickOpen();
+                           }}
+                        >
+                           <DeleteSweepTwoToneIcon />
+                        </IconButton>
+                     </Grid>
                   </Grid>
                </>
             );
@@ -200,7 +233,7 @@ export default function SearchProfile() {
                      height: "7.5vh",
                      color: "white",
                   }}
-                  title="SEARCH PROFILE"
+                  title="SEARCH EMPLOYEE"
                   titleTypographyProps={{
                      sx: {
                         fontSize: "2.8vh",
@@ -210,7 +243,7 @@ export default function SearchProfile() {
                />
                <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.7) }}>
                   <Grid container rowSpacing={2} columnSpacing={1}>
-                     <Grid item xs={12} md={4}>
+                     <Grid item xs={12} md={3}>
                         <TextField
                            label="Name"
                            variant="outlined"
@@ -224,7 +257,7 @@ export default function SearchProfile() {
                            }
                         />
                      </Grid>
-                     <Grid item xs={12} md={4}>
+                     <Grid item xs={12} md={3}>
                         <TextField
                            type="number"
                            label="Mobile Number"
@@ -239,7 +272,7 @@ export default function SearchProfile() {
                            }
                         />
                      </Grid>
-                     <Grid item xs={12} md={4}>
+                     <Grid item xs={12} md={3}>
                         <TextField
                            label="Email ID"
                            variant="outlined"
@@ -251,6 +284,27 @@ export default function SearchProfile() {
                                  email: e.target.value,
                               })
                            }
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={3}>
+                        <Autocomplete
+                           multiple
+                           id="employeeType"
+                           options={EMPLOYEE_TYPE.map((a) => a)}
+                           filterSelectedOptions
+                           value={searchParams.employeeType}
+                           onChange={(e, v) =>
+                              setSearchParams({
+                                 ...searchParams,
+                                 employeeType: v,
+                              })
+                           }
+                           renderInput={(params) => (
+                              <TextField
+                                 {...params}
+                                 label="Designation"
+                              />
+                           )}
                         />
                      </Grid>
                      <Grid item xs={8} md={9} />

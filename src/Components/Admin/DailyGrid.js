@@ -28,7 +28,7 @@ import CancelTwoToneIcon from "@mui/icons-material/CancelTwoTone";
 import ExcelExport from "../Main/ExcelExport";
 import AxiosInstance from "../Main/AxiosInstance";
 
-export default function AccountGrid() {
+export default function DailyGrid() {
   // STATES HANDLING AND VARIABLES
   const [open, setOpen] = React.useState(false);
   const [deleteData, setDeleteData] = React.useState({});
@@ -58,94 +58,194 @@ export default function AccountGrid() {
 
   // GRID HEADER/COLOUMS HANDLING
   const column = [
+    // {
+    //   headerName: "Actions",
+    //   width: 100,
+    //   pinned: "left",
+    //   cellRenderer: (props) => {
+    //     return (
+    //       <>
+    //         <Grid container columnSpacing={1}>
+    //           <Grid item xs={4}>
+    //             <IconButton
+    //               color="primary"
+    //               size="small"
+    //               onClick={() =>
+    //                 navigate(`/EditEmployee/${props.data._id}?edit=false`)
+    //               }
+    //             >
+    //               <VisibilityTwoToneIcon />
+    //             </IconButton>
+    //           </Grid>
+    //           <Grid item xs={4}>
+    //             <IconButton
+    //               size="small"
+    //               color="warning"
+    //               onClick={() =>
+    //                 navigate(`/EditEmployee/${props.data._id}?edit=true`)
+    //               }
+    //             >
+    //               <BorderColorTwoToneIcon />
+    //             </IconButton>
+    //           </Grid>
+    //           <Grid item xs={4}>
+    //             <IconButton
+    //               size="small"
+    //               color="error"
+    //               onClick={() => {
+    //                 setDeleteData({
+    //                   name: props.data.name,
+    //                   id: props.data.employeeId,
+    //                   _id: props.data._id,
+    //                 });
+    //                 handleClickOpen();
+    //               }}
+    //             >
+    //               <DeleteSweepTwoToneIcon />
+    //             </IconButton>
+    //           </Grid>
+    //         </Grid>
+    //       </>
+    //     );
+    //   },
+    // },
     {
       headerName: "Employee Name",
       field: "name",
-      width: "280px",
-      headerCheckboxSelection: true,
-      checkboxSelection: true,
-      headerCheckboxSelectionFilteredOnly: true,
-    },
-    { headerName: "Employee ID", field: "employeeId", width: "180px" },
-    {
-      headerName: "Employee Number",
-      field: "mobile",
-      width: "200px",
-      sortable: false,
+      pinned: "left",
+      width: 200,
     },
     {
-      headerName: "Employee Status",
-      width: "180px",
-      cellRenderer: (props) => {
-        return (
-          <>
-            {props.data.status ? (
-              <>
-                <IconButton color="success">
-                  <CheckCircleTwoToneIcon />
-                </IconButton>
-              </>
-            ) : (
-              <>
-                <IconButton color="error">
-                  <CancelTwoToneIcon />
-                </IconButton>
-              </>
-            )}
-          </>
-        );
-      },
+      headerName: "Employee ID",
+      field: "",
+      width: 150,
     },
     {
-      headerName: "Actions",
-      width: "200px",
-      cellRenderer: (props) => {
-        return (
-          <>
-            <Grid container columnSpacing={1}>
-              <Grid item xs={4}>
-                <IconButton
-                  color="primary"
-                  size="small"
-                  onClick={() =>
-                    navigate(`/EditEmployee/${props.data._id}?edit=false`)
-                  }
-                >
-                  <VisibilityTwoToneIcon />
-                </IconButton>
-              </Grid>
-              <Grid item xs={4}>
-                <IconButton
-                  size="small"
-                  color="secondary"
-                  onClick={() =>
-                    navigate(`/EditEmployee/${props.data._id}?edit=true`)
-                  }
-                >
-                  <BorderColorTwoToneIcon />
-                </IconButton>
-              </Grid>
-              <Grid item xs={4}>
-                <IconButton
-                  size="small"
-                  color="error"
-                  onClick={() => {
-                    setDeleteData({
-                      name: props.data.name,
-                      id: props.data.employeeId,
-                      _id: props.data._id,
-                    });
-                    handleClickOpen();
-                  }}
-                >
-                  <DeleteSweepTwoToneIcon />
-                </IconButton>
-              </Grid>
-            </Grid>
-          </>
-        );
-      },
+      headerName: "DOJ",
+      field: "",
+      width: 150,
     },
+    {
+      headerName: "L2 - A",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "L2 - R",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Good",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "TAC",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Future",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Total Interview",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Total Interview Duration",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Duration Ach %",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "L2 Ach %",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Calls",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Target",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Ach",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Walk - In (Today)",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "NS %",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "DND",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "NE - F",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "NE - E",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "NI",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "NI - C",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "L1 & L2 Wrong No",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "WD - L1",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "WD - L2",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Client Non Rejects",
+      field: "",
+      width: 150,
+    },
+    {
+      headerName: "Client Rejects",
+      field: "",
+      width: 150,
+    },
+    
   ];
 
   const defaultColDef = {
@@ -231,79 +331,13 @@ export default function AccountGrid() {
 
   return (
     <>
-      <div style={{ height: "100vh", width: "100vw" }}>
-        {/* Toolbar */}
-        <Grid
-          container
-          spacing={2}
-          alignItems="center"
-          sx={{
-            pt: "9vh",
-            px: isSmall ? 1 : 3,
-            width: "100vw",
-            flexWrap: "wrap",
-          }}
-        >
-          <Grid item xs={6} sm={2} md={1}>
-            <TextField
-              fullWidth
-              size="small"
-              type="number"
-              label="No.of Rows"
-              className="tw"
-              value={count}
-              onChange={(e) => setCount(e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={6} sm={2}>
-            <Button
-              fullWidth
-              variant="contained"
-              color="success"
-              className="gridButton"
-              onClick={() => {
-                if (employeeList.length === 0) {
-                  toast.error("No Rows to select");
-                  return;
-                }
-                for (var i = 0; i < Math.min(count, employeeList.length); i++) {
-                  var node = gridapi?.current.api.getRowNode(i);
-                  node.setSelected(true);
-                }
-              }}
-            >
-              Select
-            </Button>
-          </Grid>
-          <Grid item xs={12} sm={2} md={4} />
-          <Grid item xs={12} sm={3}>
-            <TextField
-              size="small"
-              label="File Name"
-              value={fileName}
-              fullWidth
-              className="tw"
-              onChange={(e) => setFileName(e.target.value)}
-            />
-          </Grid>
-          <Grid item xs={12} sm={3} md={2}>
-            <Button
-              fullWidth
-              variant="contained"
-              color="inherit"
-              className="gridButton"
-              onClick={handleExcelExport}
-            >
-              Export Excel
-            </Button>
-          </Grid>
-        </Grid>
+      <div style={{ height: "100vh", width: "100vw", paddingTop: "6.5vh" }}>
         <div
-          className="ag-theme-quartz-dark"
+          className="ag-theme-quartz-dark custom-grid"
           style={{
             marginTop: "1vh",
             marginLeft: isSmall ? "1%" : "0.2%",
-            height: "84vh",
+            height: "92vh",
             width: isSmall ? "98%" : "99.6%",
           }}
         >
@@ -317,6 +351,8 @@ export default function AccountGrid() {
             selection={selection}
             paginationPageSizeSelector={paginationPageSizeSelector}
             rowSelection={"multiple"}
+            rowHeight={28}      // <-- set row height here
+            headerHeight={35}   // <-- set header height here
           />
         </div>
         <Dialog

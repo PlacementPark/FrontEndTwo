@@ -8,12 +8,9 @@
   min-height: 100vh;
 }
 
-/* ::-webkit-scrollbar {
-  display: none;
-} */
- 
-.dbButton{
-  height: 7vh;
+/* Transparent responsive button cards */
+.dbButton {
+  height: 6vh; /* card/button height */
   background-color: transparent;
   backdrop-filter: blur(70px);
   border-radius: 20px;
@@ -24,10 +21,36 @@
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 0 6px;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  cursor: pointer;
+  transition: 0.3s;
 }
 
-.dbCards{
-  height: 14.5vh;
+.dbButton:hover {
+  background-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Responsive fix for smaller devices */
+@media (max-width: 600px) {
+  .dbButton {
+    height: 7vh;
+    padding: 0 4px;
+  }
+  .dbButton p,
+  .dbButton span,
+  .dbButton h6 {
+    font-size: 0.7rem !important;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+}
+
+/* Dashboard cards */
+.dbCards {
+  height: 13vh; /* reduced from 14.5vh */
   background-color: transparent;
   backdrop-filter: blur(70px);
   color: white;
@@ -35,6 +58,44 @@
   border-left-style: solid;
   border-left-color: #FF5C00;
   border-left-width: 0.5vh;
+}
+
+/* Hide scrollbar */
+::-webkit-scrollbar {
+  display: none;
+}
+
+.cardsStyle {
+  height: 13vh;
+  background-color: transparent;
+  backdrop-filter: blur(70px);
+  color: white;
+  border-radius: 16px;
+  border-left-style: solid;
+  border-left-width: 0.4vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding-left: 0.8rem;
+  padding-top: 4vh;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  transition: all 0.5s ease;
+}
+
+.cardsStyle:hover {
+  transform: translateY(-5px) scale(1.06); /* lift effect */
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.1); /* brighten on hover */
+  color: #00FFEF;
+  border-color: #FFF700;
+  border-left-width: 1vh;
+  letter-spacing: 0.5vh;
+}
+
+.gridButton {
+  letter-spacing: 1vh;
+  font-weight: light;
 }
 
 /* CSS for Dividers to turn white in dark */
@@ -55,14 +116,121 @@
   border-color: white; /* Unfocused border color */
 }
 .tw .MuiOutlinedInput-root:hover .MuiOutlinedInput-notchedOutline {
-  border-color: rgb(0, 204, 255); /* Hover border color */
+  border-color: #00FFEF; /* Hover border color */
 }
 .tw .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
-  border-color: rgb(0, 204, 255); /* Focused border color */
+  border-color: #00FFEF; /* Focused border color */
 }
 .tw .MuiInputLabel-root {
   color: white; /* Label color */
 }
 .tw .MuiInputLabel-root.Mui-focused {
-  color: rgb(0, 204, 255); /* Focused label color */
+  color: #00FFEF; /* Focused label color */
 }
+
+/* Input text */
+.calenderMUI .MuiInputBase-input {
+  color: white !important;
+}
+
+/* Label text */
+.calenderMUI .MuiInputLabel-root {
+  color: white !important;
+}
+
+/* Border - normal */
+.calenderMUI .MuiOutlinedInput-notchedOutline {
+  border-color: white !important;
+}
+
+/* Border - hover */
+.calenderMUI:hover .MuiOutlinedInput-notchedOutline {
+  border-color: #00FFEF !important;
+}
+
+/* Border - focus */
+.calenderMUI .Mui-focused .MuiOutlinedInput-notchedOutline {
+  border-color: #00FFEF !important;
+}
+
+/* Label - focus */
+.calenderMUI .MuiInputLabel-root.Mui-focused {
+  color: #00FFEF !important;
+}
+
+/* Input text - focus */
+.calenderMUI .MuiInputBase-input:focus {
+  color: white !important;
+}
+
+/* Calendar icon - hover/focus */
+.calenderMUI .MuiSvgIcon-root {
+  color: white !important;
+}
+.calenderMUI:hover .MuiSvgIcon-root,
+.calenderMUI .Mui-focused .MuiSvgIcon-root {
+  color: #00FFEF !important;
+}
+
+/*Grid Modified CSS*/
+/* target your grid by adding the class "custom-grid" to the wrapper div */
+.custom-grid .ag-root-wrapper {
+  font-size: 0.80rem !important;
+  color: white !important;
+  --ag-font-size: 0.5rem; /* sometimes helps newer AG versions */
+}
+
+/* header */
+.custom-grid .ag-header-cell,
+.custom-grid .ag-header-cell-label,
+.custom-grid .ag-header-cell-text {
+  font-size: 0.95rem !important;
+  line-height: 1 !important;
+  display: flex;
+  align-items: center;
+}
+
+/* compact header height */
+.custom-grid .ag-header-row {
+  height: 32px !important;
+}
+
+/* body cells: center content vertically and reduce padding */
+.custom-grid .ag-cell {
+  display: flex !important;
+  align-items: center !important;
+  font-size: 0.80rem !important;
+  line-height: 1 !important;
+  box-sizing: border-box;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* force row height (AG sometimes inlines height; use !important) */
+.custom-grid .ag-center-cols-container .ag-row,
+.custom-grid .ag-row {
+  height: 28px !important;   /* choose 28, 26, 24 — test which you like */
+  min-height: 0 !important;
+}
+
+/* tighten the cell wrapper used for pinned columns, etc. */
+.custom-grid .ag-cell-wrapper {
+  height: 100% !important;
+}
+
+/* make icon buttons smaller and vertically centered */
+.custom-grid .ag-cell .MuiIconButton-root {
+  padding: 4px !important;
+  height: 20px !important;
+  width: 20px !important;
+  align-self: center !important;
+}
+
+/* if you use icons directly */
+.custom-grid .ag-cell svg {
+  font-size: 0.9rem !important;
+}
+
+
+

@@ -19,8 +19,8 @@ import {
 } from "@mui/material";
 import { toast } from "react-toastify";
 import { useParams, useNavigate } from "react-router-dom";
-import axios from "axios";
 
+import AxiosInstance from "../Main/AxiosInstance";
 export default function AddRole() {
    //DROP DOWN OPTIONS AND VALUES
    const status = [
@@ -111,32 +111,19 @@ export default function AddRole() {
       processWorkType: "",
       faqs: "",
       rejectionReasons: [],
+      billingTerm: 0,
+      endTrackingDate: 0,
+      industry: "",
+      aboutCompany: "",
    });
 
    // FUNCTIONS HANDLING AND SEARCH API CALLS
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/company/" +
-                  id,
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
-            const extraRes = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/extra/all",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
-            setCompany(res.data);
+            const res = await AxiosInstance.get("/company/company/" + id);
+            const extraRes = await AxiosInstance.get("/extra/all");
+            setCompany(res.data.data);
             extraRes.data.forEach(({ _id, data }) => {
                if (_id === "Skills") setSkillsList(data);
                else if (_id === "Locations") setLocationList(data);
@@ -149,33 +136,19 @@ export default function AddRole() {
 
    const handleAddRole = async () => {
       try {
-         const newRole = await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/company/" + id,
-            { roles: [role] },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
-         await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/extra/skills",
-            {
-               data: [
-                  ...new Set([
-                     ...role.mandatorySkills,
-                     ...role.optionalSkills,
+         const newRole = await AxiosInstance.patch("/company/" + id, {
+            roles: [role],
+         });
+         await AxiosInstance.patch("/extra/skills", {
+            data: [
+               ...new Set([
+                  ...role.mandatorySkills,
+                  ...role.optionalSkills,
 
-                     ...skillsList,
-                  ]),
-               ],
-            },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+                  ...skillsList,
+               ]),
+            ],
+         });
          toast.success("Role Added Successfully");
          navigate(`/EditEmpanelled/${id}?edit=true`);
          console.log(newRole);
@@ -377,7 +350,7 @@ export default function AddRole() {
                />
                <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.7) }}>
                   <Grid container rowSpacing={2} columnSpacing={1}>
-                     <Grid item xs={6}>
+                     <Grid item xs={12} md={6}>
                         <TextField
                            id="roleCompany"
                            label="Company Name"
@@ -387,7 +360,7 @@ export default function AddRole() {
                            disabled
                         />
                      </Grid>
-                     <Grid item xs={6}>
+                     {/* <Grid item xs={6}>
                         <TextField
                            id="roleStatus"
                            select
@@ -404,24 +377,42 @@ export default function AddRole() {
                               </MenuItem>
                            ))}
                         </TextField>
+                     </Grid> */}
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           id="rolePeriod"
+                           select
+                           label="Job Type"
+                           fullWidth
+                           value={role.period}
+                           onChange={(e) =>
+                              setRole({ ...role, period: e.target.value })
+                           }
+                        >
+                           {period.map((option) => (
+                              <MenuItem key={option.value} value={option.value}>
+                                 {option.label}
+                              </MenuItem>
+                           ))}
+                        </TextField>
                      </Grid>
                      <Grid item xs={12} md={6}>
                         <TextField
                            fullWidth
-                           id="roleDesignation"
-                           label="Industry/Department-Role/Designation"
+                           id="roleIndustry"
+                           label="Industry"
                            variant="outlined"
-                           value={role.designation}
+                           value={role.industry}
                            onChange={(e) =>
-                              setRole({ ...role, designation: e.target.value })
+                              setRole({ ...role, industry: e.target.value })
                            }
                         />
                      </Grid>
                      <Grid item xs={12} md={6}>
                         <TextField
                            id="processWorkType"
-                           select
-                           label="Process Work Type"
+                           label="Notice Period/ Buyout"
+                           variant="outlined"
                            fullWidth
                            value={role.processWorkType}
                            onChange={(e) =>
@@ -430,13 +421,7 @@ export default function AddRole() {
                                  processWorkType: e.target.value,
                               })
                            }
-                        >
-                           {["Insourcing", "Outsourcing"].map((option) => (
-                              <MenuItem key={option} value={option}>
-                                 {option}
-                              </MenuItem>
-                           ))}
-                        </TextField>
+                        ></TextField>
                      </Grid>
                      <Grid item xs={12} md={6}>
                         <TextField
@@ -446,6 +431,42 @@ export default function AddRole() {
                            value={role.role}
                            onChange={(e) =>
                               setRole({ ...role, role: e.target.value })
+                           }
+                           fullWidth
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           id="roleAge"
+                           label="Age Criteria"
+                           variant="outlined"
+                           value={role.ageCriteria}
+                           onChange={(e) =>
+                              setRole({ ...role, ageCriteria: e.target.value })
+                           }
+                           fullWidth
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           fullWidth
+                           id="roleDesignation"
+                           label="Designation"
+                           variant="outlined"
+                           value={role.designation}
+                           onChange={(e) =>
+                              setRole({ ...role, designation: e.target.value })
+                           }
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           id="roleBond"
+                           label="Bond"
+                           variant="outlined"
+                           value={role.bond}
+                           onChange={(e) =>
+                              setRole({ ...role, bond: e.target.value })
                            }
                            fullWidth
                         />
@@ -470,9 +491,30 @@ export default function AddRole() {
                      </Grid>
                      <Grid item xs={12} md={6}>
                         <TextField
+                           id="roleCab"
+                           select
+                           label="Cab Facility"
+                           fullWidth
+                           value={role.cabFacility}
+                           onChange={(e) =>
+                              setRole({
+                                 ...role,
+                                 cabFacility: e.target.value,
+                              })
+                           }
+                        >
+                           {["No", "1 Way", "2 Way"].map((option) => (
+                              <MenuItem key={option} value={option}>
+                                 {option}
+                              </MenuItem>
+                           ))}
+                        </TextField>
+                     </Grid>
+                     <Grid item xs={12}>
+                        <TextField
                            fullWidth
                            id="roleHappens"
-                           label="What Happens in the Role"
+                           label="What Happens in the Role (Roles & Responsibilities)"
                            variant="outlined"
                            value={role.happens}
                            onChange={(e) =>
@@ -480,7 +522,7 @@ export default function AddRole() {
                            }
                         />
                      </Grid>
-                     <Grid item xs={6}>
+                     <Grid item xs={12}>
                         <TextField
                            fullWidth
                            id="roleExperience"
@@ -492,44 +534,30 @@ export default function AddRole() {
                            }
                         />
                      </Grid>
-                     <Grid item xs={6}>
-                        <FormLabel id="roleCab">Cab Facility :</FormLabel>
-                        <RadioGroup
-                           row
-                           aria-labelledby="roleCab"
-                           name="position"
-                           value={role.cabFacility}
+                     <Grid item xs={12}>
+                        <TextField
+                           id="roleSalary"
+                           label="Salary + Incentive + Bonus"
+                           value={role.salary}
                            onChange={(e) =>
-                              setRole({ ...role, cabFacility: e.target.value })
+                              setRole({ ...role, salary: e.target.value })
                            }
                            fullWidth
-                        >
-                           <FormControlLabel
-                              value={true}
-                              control={<Radio />}
-                              label="Yes"
-                              labelPlacement="start"
-                              fullWidth
-                           />
-                           <FormControlLabel
-                              value={false}
-                              control={<Radio />}
-                              label="No"
-                              labelPlacement="start"
-                              fullWidth
-                           />
-                        </RadioGroup>
+                        />
                      </Grid>
-                     <Grid item xs={12} md={6}>
+                     <Grid item xs={12}>
                         <Autocomplete
                            multiple
                            freeSolo
-                           id="roleSkills"
-                           options={skillsList.map((skill) => skill)}
+                           id="roleLocation"
+                           options={locationList.map((location) => location)}
                            filterSelectedOptions
-                           value={role.mandatorySkills}
+                           value={role.location}
                            onChange={(e, v) =>
-                              setRole({ ...role, mandatorySkills: v })
+                              setRole({
+                                 ...role,
+                                 location: v,
+                              })
                            }
                            renderTags={(value, getTagProps) =>
                               value.map((option, index) => {
@@ -547,48 +575,23 @@ export default function AddRole() {
                               })
                            }
                            renderInput={(params) => (
-                              <TextField
-                                 {...params}
-                                 label="Mandatory Skill Requirement"
-                              />
+                              <TextField {...params} label="Company Location" />
                            )}
                         />
                      </Grid>
-                     <Grid item xs={12} md={6}>
-                        <Autocomplete
-                           multiple
-                           freeSolo
-                           id="roleSkills"
-                           options={skillsList.map((skill) => skill)}
-                           filterSelectedOptions
-                           value={role.optionalSkills}
-                           onChange={(e, v) =>
-                              setRole({ ...role, optionalSkills: v })
+                     <Grid item xs={12}>
+                        <TextField
+                           id="roleComapnyArea"
+                           label="Company Area"
+                           variant="outlined"
+                           value={role.area}
+                           onChange={(e) =>
+                              setRole({ ...role, area: e.target.value })
                            }
-                           renderTags={(value, getTagProps) =>
-                              value.map((option, index) => {
-                                 const { key, ...tagProps } = getTagProps({
-                                    index,
-                                 });
-                                 return (
-                                    <Chip
-                                       variant="outlined"
-                                       label={option}
-                                       key={key}
-                                       {...tagProps}
-                                    />
-                                 );
-                              })
-                           }
-                           renderInput={(params) => (
-                              <TextField
-                                 {...params}
-                                 label="Optional Skill Requirement"
-                              />
-                           )}
+                           fullWidth
                         />
                      </Grid>
-                     <Grid item xs={12} md={6}>
+                     <Grid item xs={12}>
                         <Autocomplete
                            multiple
                            freeSolo
@@ -627,116 +630,6 @@ export default function AddRole() {
                            )}
                         />
                      </Grid>
-                     <Grid item xs={12} md={6}>
-                        <TextField
-                           id="roleShift"
-                           label="Shift & Week-Off"
-                           value={role.shift}
-                           onChange={(e) =>
-                              setRole({ ...role, shift: e.target.value })
-                           }
-                           fullWidth
-                        />
-                     </Grid>
-                     <Grid item xs={12} md={6}>
-                        <TextField
-                           id="roleSalary"
-                           label="Salary + Incentive + Bonus"
-                           value={role.salary}
-                           onChange={(e) =>
-                              setRole({ ...role, salary: e.target.value })
-                           }
-                           fullWidth
-                        />
-                     </Grid>
-                     <Grid item xs={12} md={6}>
-                        <Autocomplete
-                           multiple
-                           freeSolo
-                           id="roleLocation"
-                           options={locationList.map((location) => location)}
-                           filterSelectedOptions
-                           value={role.location}
-                           onChange={(e, v) =>
-                              setRole({
-                                 ...role,
-                                 location: v,
-                              })
-                           }
-                           renderTags={(value, getTagProps) =>
-                              value.map((option, index) => {
-                                 const { key, ...tagProps } = getTagProps({
-                                    index,
-                                 });
-                                 return (
-                                    <Chip
-                                       variant="outlined"
-                                       label={option}
-                                       key={key}
-                                       {...tagProps}
-                                    />
-                                 );
-                              })
-                           }
-                           renderInput={(params) => (
-                              <TextField {...params} label="Company Location" />
-                           )}
-                        />
-                     </Grid>
-                     <Grid item xs={12} md={6}>
-                        <TextField
-                           id="roleComapnyArea"
-                           label="Company Area"
-                           variant="outlined"
-                           value={role.area}
-                           onChange={(e) =>
-                              setRole({ ...role, area: e.target.value })
-                           }
-                           fullWidth
-                        />
-                     </Grid>
-                     <Grid item xs={6} md={3}>
-                        <TextField
-                           id="roleBond"
-                           label="Bond"
-                           variant="outlined"
-                           value={role.bond}
-                           onChange={(e) =>
-                              setRole({ ...role, bond: e.target.value })
-                           }
-                           fullWidth
-                        />
-                     </Grid>
-                     <Grid item xs={6} md={3}>
-                        <TextField
-                           id="roleAge"
-                           label="Age Criteria"
-                           variant="outlined"
-                           value={role.ageCriteria}
-                           onChange={(e) =>
-                              setRole({ ...role, ageCriteria: e.target.value })
-                           }
-                           fullWidth
-                        />
-                     </Grid>
-                     <Grid item xs={12} md={6}>
-                        <TextField
-                           id="rolePeriod"
-                           select
-                           label="Permanent / Contract / Notice Period / Buyout"
-                           fullWidth
-                           value={role.period}
-                           onChange={(e) =>
-                              setRole({ ...role, period: e.target.value })
-                           }
-                        >
-                           {period.map((option) => (
-                              <MenuItem key={option.value} value={option.value}>
-                                 {option.label}
-                              </MenuItem>
-                           ))}
-                        </TextField>
-                     </Grid>
                      <Grid item xs={12}>
                         <TextField
                            id="roleOtherDocs"
@@ -745,6 +638,19 @@ export default function AddRole() {
                            value={role.otherDocs}
                            onChange={(e) =>
                               setRole({ ...role, otherDocs: e.target.value })
+                           }
+                           fullWidth
+                           multiline
+                        />
+                     </Grid>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="aboutCompany"
+                           label="About Company"
+                           variant="outlined"
+                           value={role.aboutCompany}
+                           onChange={(e) =>
+                              setRole({ ...role, aboutCompany: e.target.value })
                            }
                            fullWidth
                            multiline
@@ -792,6 +698,118 @@ export default function AddRole() {
                            }
                         />
                      </Grid>
+                     <Grid item xs={12} >
+                        <Autocomplete
+                           multiple
+                           freeSolo
+                           id="roleSkills"
+                           options={skillsList.map((skill) => skill)}
+                           filterSelectedOptions
+                           value={role.mandatorySkills}
+                           onChange={(e, v) =>
+                              setRole({ ...role, mandatorySkills: v })
+                           }
+                           renderTags={(value, getTagProps) =>
+                              value.map((option, index) => {
+                                 const { key, ...tagProps } = getTagProps({
+                                    index,
+                                 });
+                                 return (
+                                    <Chip
+                                       variant="outlined"
+                                       label={option}
+                                       key={key}
+                                       {...tagProps}
+                                    />
+                                 );
+                              })
+                           }
+                           renderInput={(params) => (
+                              <TextField
+                                 {...params}
+                                 label="Mandatory Skill Requirement"
+                              />
+                           )}
+                        />
+                     </Grid>
+                     <Grid item xs={12}>
+                        <Autocomplete
+                           multiple
+                           freeSolo
+                           id="roleSkills"
+                           options={skillsList.map((skill) => skill)}
+                           filterSelectedOptions
+                           value={role.optionalSkills}
+                           onChange={(e, v) =>
+                              setRole({ ...role, optionalSkills: v })
+                           }
+                           renderTags={(value, getTagProps) =>
+                              value.map((option, index) => {
+                                 const { key, ...tagProps } = getTagProps({
+                                    index,
+                                 });
+                                 return (
+                                    <Chip
+                                       variant="outlined"
+                                       label={option}
+                                       key={key}
+                                       {...tagProps}
+                                    />
+                                 );
+                              })
+                           }
+                           renderInput={(params) => (
+                              <TextField
+                                 {...params}
+                                 label="Optional Skill Requirement"
+                              />
+                           )}
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           type="number"
+                           label="Billing Term"
+                           id="billingTerm"
+                           variant="outlined"
+                           fullWidth
+                           value={role.billingTerm}
+                           onChange={(e) =>
+                              setRole({
+                                 ...role,
+                                 billingTerm: e.target.value,
+                              })
+                           }
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           type="number"
+                           id= "endTrackingDate"
+                           label="End Tracking Date"
+                           variant="outlined"
+                           fullWidth
+                           value={role.endTrackingDate}
+                           onChange={(e) =>
+                              setRole({
+                                 ...role,
+                                 endTrackingDate: e.target.value,
+                              })
+                           }
+                        />
+                     </Grid>
+                     <Grid item xs={12} md={6}>
+                        <TextField
+                           id="roleShift"
+                           label="Shift & Week-Off"
+                           value={role.shift}
+                           onChange={(e) =>
+                              setRole({ ...role, shift: e.target.value })
+                           }
+                           fullWidth
+                        />
+                     </Grid>
+
                      <Grid item xs={9} />
                      <Grid item xs={3}>
                         <Button

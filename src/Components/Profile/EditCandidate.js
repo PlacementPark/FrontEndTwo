@@ -18,38 +18,53 @@ import {
    Collapse,
    alpha,
 } from "@mui/material";
+import Typography from "@mui/material/Typography";
+import { red } from "@mui/material/colors";
+import Avatar from "@mui/material/Avatar";
 import dayjs from "dayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import axios from "axios";
 import { useSelector } from "react-redux";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import ControlPointIcon from "@mui/icons-material/ControlPoint";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
-
+import AxiosInstance from "../Main/AxiosInstance";
+import {
+   L1_STATUS,
+   L2_STATUS,
+   SELECT_STATUS,
+   INTERVIEW_STATUS,
+   LANGUAGE_LEVEL,
+   SOURCE,
+} from "../Main/Constants";
+import { OpenInNew } from "@mui/icons-material";
 export default function EditCandidate() {
    // STATES HANDLING AND VARIABLES
    const navigate = useNavigate();
-   const { employeeType } = useSelector((state) => state.user);
+   const { employeeType,userid } = useSelector((state) => state.user);
    const access = !["Recruiter", "Intern"].includes(employeeType);
    const TMAAccess = !["Recruiter", "Intern"].includes(employeeType);
+   const [remarks,setRemarks] = React.useState("");
+   const rtAccess = [
+      "Recruiter",
+      "Intern",
+      "Teamlead",
+      "Business Development",
+   ].includes(employeeType);
    const [expandedCompany, setExpandedCompany] = React.useState(false);
    const { id } = useParams();
    const [searchParams] = useSearchParams();
    const editable = searchParams.get("edit") === "true";
-   const url = "https://tpp-backend-eura.onrender.com/api/v1/candidate/" + id;
+   const url = "/candidate/" + id;
    const [companiesList, setCompaniesList] = React.useState([]);
    const [rolesList, setRolesList] = React.useState([]);
    const [skillsList, setSkillsList] = React.useState([]);
    const [locationList, setLocationList] = React.useState([]);
    const [qualificationList, setQualificationList] = React.useState([]);
    const [languageList, setLanguageList] = React.useState([{ language: " " }]);
-   const [languageLevelList, setlanguageLevelList] = React.useState([]);
-   const [assessment, setAssessment] = React.useState([]);
-   const [interviewStatus, setInterviewStatus] = React.useState([]);
-   const [select, setSelect] = React.useState([]);
+   const [remarksList, setRemarksList] = React.useState([]);
    const [candidate, setCandidate] = React.useState({
       fullName: "",
       mobile: [""],
@@ -95,47 +110,49 @@ export default function EditCandidate() {
       billingDate: null,
       invoiceNumber: "",
       invoiceDate: null,
+      lastUpdatedOn:null,
+      createdOn: null,
+      l1StatDate: null,
+      l2StatDate: null,
+      interviewStatDate: null,
+      tenureStatDate: null,
+      selectDate: null,
+      offerDropDate: null,
+      nonTenureDate: null,
+      endTrackingDate: null,
+      createdByEmployee: {
+         name: "",
+      },
+      assignedEmployee: {
+         name: "",
+      },
+      tag: "",
+      source: "",
    });
 
    // API CALLS HANDLING
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const canres = await axios.get(url, {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            });
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/companyType?companyType=Empanelled",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const canres = await AxiosInstance.get(url);
+            const res = await AxiosInstance.get(
+               "/company/candidateCompanyType?companyType=Empanelled"
             );
-            const extraRes = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/extra/all",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const extraRes = await AxiosInstance.get("/extra/all");
+            const remarksRes = await AxiosInstance.get(
+               "remarks/candidate/" + id
             );
-            setCandidate(canres.data);
-            setCompaniesList(res.data);
+            setCandidate({ ...candidate, ...canres.data });
+            setCompaniesList(res.data.data);
+            setRemarksList(remarksRes.data);
+            console.log(extraRes.data);
+
             setExpandedCompany(canres.data.experience.length !== 0);
             extraRes.data.forEach(({ _id, data }) => {
                if (_id === "Skills") setSkillsList(data);
                else if (_id === "Locations") setLocationList(data);
                else if (_id === "Qualifications") setQualificationList(data);
                else if (_id === "Languages") setLanguageList(data);
-               else if (_id === "Language Level") setlanguageLevelList(data);
-               else if (_id === "L1&L2") setAssessment(data);
-               else if (_id === "Interview Status") setInterviewStatus(data);
-               else if (_id === "Select") setSelect(data);
             });
          } catch (error) {}
       };
@@ -146,6 +163,18 @@ export default function EditCandidate() {
    const handleExpandCompany = () => {
       setExpandedCompany(!expandedCompany);
    };
+   const handleAddRemarks = async ()=>{
+      const addedRemarks = await AxiosInstance.post("/remarks", {
+         remarks: remarks,
+         employeeId: userid,
+         candidateId: id,
+      });
+      var rem = remarksList;
+      rem.push(addedRemarks.data)
+      rem.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))
+      setRemarksList(rem)
+      setRemarks("")
+   }
 
    const handleEditCandidate = async () => {
       var flag = 0;
@@ -181,6 +210,9 @@ export default function EditCandidate() {
       if (!["WD", "TAC", "GOOD"].includes(candidate.l1Assessment)) {
          var can = candidate;
          can.l2Assessment = null;
+         can.l2StatDate = null;
+         can.interviewStatDate = null;
+         can.tenureStatDate = null;
          can.companyId = null;
          can.roleId = null;
          can.interviewDate = null;
@@ -200,6 +232,9 @@ export default function EditCandidate() {
       if (!["TAC", "GOOD"].includes(candidate.l2Assessment)) {
          var can = candidate;
          can.interviewStatus = null;
+
+         can.interviewStatDate = null;
+         can.tenureStatDate = null;
          can.rate = 0;
          can.select = null;
          can.EMP_ID = "";
@@ -213,6 +248,8 @@ export default function EditCandidate() {
       }
       if (candidate.interviewStatus !== "Select") {
          var can = candidate;
+
+         can.tenureStatDate = null;
          can.rate = 0;
          can.select = null;
          can.EMP_ID = "";
@@ -228,32 +265,17 @@ export default function EditCandidate() {
       }
 
       try {
-         await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/" + id,
-            {
-               ...candidate,
-               companyId: candidate.companyId
-                  ? candidate.companyId._id
-                  : candidate.companyId,
-               roleId: candidate.roleId
-                  ? candidate.roleId._id
-                  : candidate.roleId,
-            },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
-         await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/extra/skills",
-            { data: [...new Set([...candidate.skills, ...skillsList])] },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         await AxiosInstance.patch("/candidate/" + id, {
+            ...candidate,
+            companyId: candidate.companyId
+               ? candidate.companyId._id
+               : candidate.companyId,
+            roleId: candidate.roleId ? candidate.roleId._id : candidate.roleId,
+            lastUpdatedOn: new Date()
+         });
+         await AxiosInstance.patch("/extra/skills", {
+            data: [...new Set([...candidate.skills, ...skillsList])],
+         });
          toast.success("Candidate Edited Successfully");
          window.location.replace(document.referrer);
       } catch (error) {}
@@ -261,15 +283,7 @@ export default function EditCandidate() {
 
    const checkNumber = async (num) => {
       try {
-         const res = await axios.get(
-            "https://tpp-backend-eura.onrender.com/api/v1/candidate/mobile/" +
-               num,
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         const res = await AxiosInstance.get("/candidate/mobile/" + num);
          if (res.data.status === true) toast.error("Number already exists");
       } catch (error) {}
    };
@@ -308,6 +322,72 @@ export default function EditCandidate() {
                />
                <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.75) }}>
                   <Grid container rowSpacing={2} columnSpacing={1}>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="createdBy"
+                           label="Created By"
+                           variant="outlined"
+                           fullWidth
+                           value={candidate.createdByEmployee.name}
+                           InputProps={{
+                              readOnly: true,
+                           }}
+                        />
+                     </Grid>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="assignedTo"
+                           label="Assigned To"
+                           variant="outlined"
+                           fullWidth
+                           value={candidate.assignedEmployee.name}
+                           InputProps={{
+                              readOnly: true,
+                           }}
+                        />
+                     </Grid>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="tag"
+                           label="Tags"
+                           variant="outlined"
+                           fullWidth
+                           value={candidate.tag}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 tag: e.target.value,
+                              });
+                              if (!e.target.validity.valid) {
+                                 toast.warning(
+                                    "Only Alphabets and Space allowed in Name!"
+                                 );
+                              }
+                           }}
+                           InputProps={{
+                              readOnly: !editable,
+                              pattern: "[A-Za-z ]+",
+                           }}
+                        />
+                     </Grid>
+                     <Grid item xs={12}>
+                        <Autocomplete
+                           className="source"
+                           options={SOURCE}
+                           getOptionLabel={(option) => option}
+                           value={candidate.source}
+                           onChange={(e, v) => {
+                              setCandidate({
+                                 ...candidate,
+                                 source: v,
+                              });
+                           }}
+                           renderInput={(params) => (
+                              <TextField {...params} label="Source" />
+                           )}
+                           readOnly={!editable}
+                        />
+                     </Grid>
                      <Grid item xs={12}>
                         <TextField
                            id="candiateName"
@@ -424,7 +504,7 @@ export default function EditCandidate() {
                            <Grid item xs={editable ? 9 : 6}>
                               <TextField
                                  id="outlined-basic"
-                                 label="HR Email ID"
+                                 label="Email ID"
                                  variant="outlined"
                                  value={x}
                                  onChange={(e) => {
@@ -585,7 +665,7 @@ export default function EditCandidate() {
                                     readOnly: !editable,
                                  }}
                               >
-                                 {languageLevelList.map((option) => (
+                                 {LANGUAGE_LEVEL.map((option) => (
                                     <MenuItem key={option} value={option}>
                                        {option}
                                     </MenuItem>
@@ -724,6 +804,7 @@ export default function EditCandidate() {
                                  fullWidth
                               >
                                  <DatePicker
+                                    format="DD/MM/YYYY"
                                     label="Year of Passing"
                                     views={["year"]}
                                     sx={{ width: "100%" }}
@@ -898,7 +979,7 @@ export default function EditCandidate() {
                                        <Grid item xs={12} md={6}>
                                           <TextField
                                              className="candidateCompanyName"
-                                             label="Comapany Name"
+                                             label="Company Name"
                                              variant="outlined"
                                              value={x.companyName}
                                              onChange={(e) => {
@@ -944,6 +1025,7 @@ export default function EditCandidate() {
                                              fullWidth
                                           >
                                              <DatePicker
+                                                format="DD/MM/YYYY"
                                                 label="Start Year"
                                                 className="candidateCompanyStartDate"
                                                 sx={{ width: "100%" }}
@@ -969,6 +1051,7 @@ export default function EditCandidate() {
                                              fullWidth
                                           >
                                              <DatePicker
+                                                format="DD/MM/YYYY"
                                                 label="End Year"
                                                 className="candidateCompanyEndDate"
                                                 sx={{ width: "100%" }}
@@ -1114,6 +1197,7 @@ export default function EditCandidate() {
                               setCandidate({
                                  ...candidate,
                                  l1Assessment: e.target.value,
+                                 l1StatDate: new Date(),
                               })
                            }
                            fullWidth
@@ -1121,7 +1205,7 @@ export default function EditCandidate() {
                               readOnly: !editable,
                            }}
                         >
-                           {assessment.map((option) => (
+                           {L1_STATUS.map((option) => (
                               <MenuItem key={option} value={option}>
                                  {option}
                               </MenuItem>
@@ -1145,15 +1229,19 @@ export default function EditCandidate() {
                                     setCandidate({
                                        ...candidate,
                                        l2Assessment: e.target.value,
+                                       l2StatDate: new Date(),
                                     })
                                  }
                                  InputProps={{
                                     readOnly: !(TMAAccess && editable),
                                  }}
                               >
-                                 {assessment.map((option) => (
-                                    <MenuItem key={option} value={option}>
-                                       {option}
+                                 {L2_STATUS.map((option) => (
+                                    <MenuItem
+                                       key={option || "Empty"}
+                                       value={option}
+                                    >
+                                       {option || "--SELECT--"}
                                     </MenuItem>
                                  ))}
                               </TextField>
@@ -1183,7 +1271,7 @@ export default function EditCandidate() {
                         candidate.l1Assessment
                      ) && (
                         <>
-                           <Grid item xs={6}>
+                           <Grid item xs={5}>
                               <Autocomplete
                                  id="Companies"
                                  disableClearable
@@ -1215,7 +1303,7 @@ export default function EditCandidate() {
                                  readOnly={!editable}
                               />
                            </Grid>
-                           <Grid item xs={6}>
+                           <Grid item xs={5}>
                               <Autocomplete
                                  id="Roles"
                                  disableClearable
@@ -1244,12 +1332,29 @@ export default function EditCandidate() {
                                  readOnly={!editable}
                               />
                            </Grid>
-                           <Grid item xs={6}>
+                           <Grid item xs={2}>
+                              <a
+                                 href={`/EditRole/${
+                                    candidate.companyId?._id || ""
+                                 }/${candidate.roleId?._id || ""}?edit=false`}
+                                 target="_blank"
+                              >
+                                 <Button
+                                    variant="contained"
+                                    size="large"
+                                    sx={{ height: "100%" }}
+                                 >
+                                    <OpenInNew />
+                                 </Button>
+                              </a>
+                           </Grid>
+                           <Grid item xs={4}>
                               <LocalizationProvider
                                  dateAdapter={AdapterDayjs}
                                  fullWidth
                               >
                                  <DatePicker
+                                    format="DD/MM/YYYY"
                                     label="Interview Date"
                                     className="candidateCompanyEndDate"
                                     sx={{ width: "100%" }}
@@ -1269,7 +1374,7 @@ export default function EditCandidate() {
                      )}
                      {["TAC", "GOOD"].includes(candidate.l2Assessment) && (
                         <>
-                           <Grid item xs={6}>
+                           <Grid item xs={4}>
                               <TextField
                                  id="candidateInterviewStatus"
                                  select
@@ -1279,6 +1384,7 @@ export default function EditCandidate() {
                                     setCandidate({
                                        ...candidate,
                                        interviewStatus: e.target.value,
+                                       interviewStatDate: new Date(),
                                     })
                                  }
                                  fullWidth
@@ -1286,75 +1392,87 @@ export default function EditCandidate() {
                                     readOnly: !(TMAAccess && editable),
                                  }}
                               >
-                                 {interviewStatus.map((option) => (
+                                 {INTERVIEW_STATUS.map((option) => (
                                     <MenuItem key={option} value={option}>
                                        {option}
                                     </MenuItem>
                                  ))}
                               </TextField>
                            </Grid>
+                           <Grid item xs={4}>
+                              <TextField
+                                 id="candidateEmpId"
+                                 label="Employee ID"
+                                 variant="outlined"
+                                 fullWidth
+                                 value={candidate.EMP_ID}
+                                 onChange={(e) =>
+                                    setCandidate({
+                                       ...candidate,
+                                       EMP_ID: e.target.value,
+                                    })
+                                 }
+                                 InputProps={{
+                                    readOnly: !(TMAAccess && editable),
+                                 }}
+                              />
+                           </Grid>
                         </>
                      )}
                      {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
-                        candidate.interviewStatus === "Select" && (
+                        candidate.interviewStatus === "Offer Drop" &&
+                        !rtAccess && (
+                           <Grid item xs={12}>
+                              <LocalizationProvider
+                                 dateAdapter={AdapterDayjs}
+                                 fullWidth
+                              >
+                                 <DatePicker
+                                    format="DD/MM/YYYY"
+                                    label="Offer Drop Date"
+                                    id="candidateOfferDropDate"
+                                    sx={{ width: "100%" }}
+                                    fullWidth
+                                    onChange={(e) => {
+                                       setCandidate({
+                                          ...candidate,
+                                          offerDropDate: e,
+                                       });
+                                    }}
+                                    value={dayjs(candidate.offerDropDate)}
+                                    readOnly={!(TMAAccess && editable)}
+                                 />
+                              </LocalizationProvider>
+                           </Grid>
+                        )}
+                     {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
+                        candidate.interviewStatus === "Select" &&
+                        !rtAccess && (
                            <>
-                              <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateRate"
-                                    type="Number"
-                                    label="Rate"
-                                    value={candidate.rate}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          rate: e.target.value,
-                                       })
-                                    }
-                                    fullWidth
-                                    InputProps={{
-                                       readOnly: !(TMAAccess && editable),
-                                    }}
-                                 />
-                              </Grid>
-                              <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateInvoiceNumber"
-                                    label="Invoice Number"
-                                    value={candidate.invoiceNumber}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          invoiceNumber: e.target.value,
-                                       })
-                                    }
-                                    fullWidth
-                                    InputProps={{
-                                       readOnly: !(TMAAccess && editable),
-                                    }}
-                                 />
-                              </Grid>
-                              <Grid item xs={4}>
+                              <Grid item xs={6}>
                                  <LocalizationProvider
                                     dateAdapter={AdapterDayjs}
                                     fullWidth
                                  >
                                     <DatePicker
-                                       label="Invoice Date"
-                                       className="candidateInvoiceDate"
+                                       format="DD/MM/YYYY"
+                                       label="Selection Date"
+                                       id="candidateSelectionDate"
                                        sx={{ width: "100%" }}
                                        fullWidth
                                        onChange={(e) => {
                                           setCandidate({
                                              ...candidate,
-                                             invoiceDate: e,
+                                             selectDate: e,
                                           });
                                        }}
-                                       value={dayjs(candidate.invoiceDate)}
+                                       value={dayjs(candidate.selectDate)}
                                        readOnly={!(TMAAccess && editable)}
                                     />
                                  </LocalizationProvider>
                               </Grid>
-                              <Grid item xs={4}>
+
+                              <Grid item xs={6}>
                                  <TextField
                                     id="candidateSelect"
                                     select
@@ -1364,6 +1482,7 @@ export default function EditCandidate() {
                                        setCandidate({
                                           ...candidate,
                                           select: e.target.value,
+                                          tenureStatDate: new Date(),
                                        })
                                     }
                                     fullWidth
@@ -1371,7 +1490,7 @@ export default function EditCandidate() {
                                        readOnly: !(TMAAccess && editable),
                                     }}
                                  >
-                                    {select.map((option) => (
+                                    {SELECT_STATUS.map((option) => (
                                        <MenuItem key={option} value={option}>
                                           {option}
                                        </MenuItem>
@@ -1382,53 +1501,21 @@ export default function EditCandidate() {
                         )}
                      {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
                         candidate.interviewStatus === "Select" &&
-                        candidate.select && (
+                        [
+                           "Tracking",
+                           "Billing",
+                           "Need to Bill",
+                           "Invoice Processed",
+                           "Billed & Tracking",
+                        ].includes(candidate.select) && (
                            <>
                               <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateEmpId"
-                                    label="Employee ID"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={candidate.EMP_ID}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          EMP_ID: e.target.value,
-                                       })
-                                    }
-                                    InputProps={{
-                                       readOnly: !(TMAAccess && editable),
-                                    }}
-                                 />
-                              </Grid>
-                              <Grid item xs={3}>
                                  <LocalizationProvider
                                     dateAdapter={AdapterDayjs}
                                     fullWidth
                                  >
                                     <DatePicker
-                                       label="Billing Date"
-                                       className="candidateBillingDate"
-                                       sx={{ width: "100%" }}
-                                       fullWidth
-                                       onChange={(e) => {
-                                          setCandidate({
-                                             ...candidate,
-                                             billingDate: e,
-                                          });
-                                       }}
-                                       value={dayjs(candidate.billingDate)}
-                                       readOnly={!(TMAAccess && editable)}
-                                    />
-                                 </LocalizationProvider>
-                              </Grid>
-                              <Grid item xs={4}>
-                                 <LocalizationProvider
-                                    dateAdapter={AdapterDayjs}
-                                    fullWidth
-                                 >
-                                    <DatePicker
+                                       format="DD/MM/YYYY"
                                        label="Onboarding Date"
                                        className="candidateonboardingDate"
                                        sx={{ width: "100%" }}
@@ -1450,6 +1537,7 @@ export default function EditCandidate() {
                                     fullWidth
                                  >
                                     <DatePicker
+                                       format="DD/MM/YYYY"
                                        label="Next Tracking Date"
                                        className="candidateNXD"
                                        sx={{ width: "100%" }}
@@ -1464,6 +1552,205 @@ export default function EditCandidate() {
                                        readOnly={!(TMAAccess && editable)}
                                     />
                                  </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="End Tracking Date"
+                                       className="candidateEXD"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       value={dayjs(candidate.endTrackingDate)}
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             endTrackingDate: e,
+                                          });
+                                       }}
+                                       readOnly={!(TMAAccess && editable)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Billing Date"
+                                       className="candidateBillingDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             billingDate: e,
+                                          });
+                                       }}
+                                       value={dayjs(candidate.billingDate)}
+                                       readOnly={!(TMAAccess && editable)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Invoice Date"
+                                       className="candidateInvoiceDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             invoiceDate: e,
+                                          });
+                                       }}
+                                       value={dayjs(candidate.invoiceDate)}
+                                       readOnly={!(TMAAccess && editable)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Invoice Credited Date"
+                                       className="candidateInvoiceCreditedDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             invoiceCreditDate: e,
+                                          });
+                                       }}
+                                       value={dayjs(
+                                          candidate.invoiceCreditDate
+                                       )}
+                                       readOnly={!(TMAAccess && editable)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={6}>
+                                 <TextField
+                                    id="candidateRate"
+                                    type="Number"
+                                    label="Rate"
+                                    value={candidate.rate}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          rate: e.target.value,
+                                       })
+                                    }
+                                    fullWidth
+                                    InputProps={{
+                                       readOnly: !(TMAAccess && editable),
+                                    }}
+                                 />
+                              </Grid>
+                              <Grid item xs={6}>
+                                 <TextField
+                                    id="candidateInvoiceNumber"
+                                    label="Invoice Number"
+                                    value={candidate.invoiceNumber}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          invoiceNumber: e.target.value,
+                                       })
+                                    }
+                                    fullWidth
+                                    InputProps={{
+                                       readOnly: !(TMAAccess && editable),
+                                    }}
+                                 />
+                              </Grid>
+                           </>
+                        )}
+                     {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
+                        candidate.interviewStatus === "Select" &&
+                        [
+                           "Non Tenure",
+                           "Process Rampdown",
+                           "Client Rampdown",
+                           "Tenure-Source Conflit",
+                           "BGV Reject-Post",
+                        ].includes(candidate.select) && (
+                           <>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Onboarding Date"
+                                       className="candidateonboardingDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       value={dayjs(candidate.onboardingDate)}
+                                       onChange={(e) =>
+                                          setCandidate({
+                                             ...candidate,
+                                             onboardingDate: e,
+                                          })
+                                       }
+                                       readOnly={!(TMAAccess && editable)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Non Tenure Date"
+                                       className="candidateNonTenureDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       value={dayjs(candidate.nonTenureDate)}
+                                       onChange={(e) =>
+                                          setCandidate({
+                                             ...candidate,
+                                             nonTenureDate: e,
+                                          })
+                                       }
+                                       readOnly={!(TMAAccess && editable)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <TextField
+                                    id="candidateRate"
+                                    type="Number"
+                                    label="Rate"
+                                    value={candidate.rate}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          rate: e.target.value,
+                                       })
+                                    }
+                                    fullWidth
+                                    InputProps={{
+                                       readOnly: !(TMAAccess && editable),
+                                    }}
+                                 />
                               </Grid>
                            </>
                         )}
@@ -1489,6 +1776,90 @@ export default function EditCandidate() {
                      height: "7vh",
                   }}
                />
+            </Card>
+            <Card
+               sx={{
+                  borderRadius: "20px",
+                  backgroundColor: "transparent",
+                  marginTop: "20px",
+               }}
+            >
+               <CardHeader
+                  sx={{
+                     backgroundColor: alpha("#0B0B0B", 0.5),
+                     backdropFilter: "blur(5px)",
+                     height: "7.5vh",
+                     color: "white",
+                  }}
+                  title="REMARKS"
+                  titleTypographyProps={{
+                     sx: {
+                        fontSize: "2.8vh",
+                        letterSpacing: "5px",
+                     },
+                  }}
+               />
+               <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.75) }}>
+                  <Grid container rowSpacing={2} columnSpacing={1}>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="candidateRemarks"
+                           label="Remarks"
+                           variant="outlined"
+                           fullWidth
+                           value={remarks}
+                           onChange={(e) => setRemarks(e.target.value)}
+                           multiline
+                        />
+                     </Grid>
+                     <Grid item xs={10} />
+                     <Grid item xs={2}>
+                        <Button
+                           fullWidth
+                           variant="contained"
+                           size="medium"
+                           onClick={handleAddRemarks}
+                           sx={{ backgroundColor: alpha("#0000FF", 0.5) }}
+                        >
+                           Post
+                        </Button>
+                     </Grid>
+                     {remarksList.map((remark) => (
+                        <Grid item xs={12}>
+                           <Card
+                              sx={{
+                                 borderRadius: "20px",
+                                 
+                              }}
+                           >
+                              <CardHeader
+                                 avatar={
+                                    <Avatar
+                                       sx={{ bgcolor: red[500] }}
+                                       aria-label="recipe"
+                                    >
+                                       {remark.employeeId.name[0]}
+                                    </Avatar>
+                                 }
+                                 title={remark.employeeId.name}
+                                 subheader={
+                                    remark.createdAt.split("T")[0] +
+                                    " " +
+                                    remark.createdAt
+                                       .split("T")[1]
+                                       .substring(0, 8)
+                                 }
+                              />
+                              <CardContent>
+                                 <Typography variant="body">
+                                    {remark.remarks}
+                                 </Typography>
+                              </CardContent>
+                           </Card>
+                        </Grid>
+                     ))}
+                  </Grid>
+               </CardContent>
             </Card>
          </Container>
       </>

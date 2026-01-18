@@ -19,7 +19,8 @@ import {
 } from "@mui/material";
 import { toast } from "react-toastify";
 import { useParams, useSearchParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+
+import AxiosInstance from "../Main/AxiosInstance";
 
 export default function EditRole() {
    // STATES HANDLING AND VARIABLES
@@ -85,39 +86,16 @@ export default function EditRole() {
    React.useEffect(() => {
       const fetchData = async () => {
          try {
-            const res = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/company/" +
-                  companyId,
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const res = await AxiosInstance.get(
+               "/company/company/" + companyId
             );
-            const roleres = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/company/" +
-                  companyId +
-                  "/role/" +
-                  id,
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
+            const roleres = await AxiosInstance.get(
+               "/company/" + companyId + "/role/" + id
             );
-            const extraRes = await axios.get(
-               "https://tpp-backend-eura.onrender.com/api/v1/extra/all",
-               {
-                  headers: {
-                     authorization: JSON.parse(localStorage.getItem("user"))
-                        .token,
-                  },
-               }
-            );
-            setCompany(res.data);
-            setRole(roleres.data[0]);
+            const extraRes = await AxiosInstance.get("/extra/all");
+            setCompany(res.data.data);
+            setRole(roleres.data.data[0]);
+            
             extraRes.data.forEach(({ _id, data }) => {
                if (_id === "Skills") setSkillsList(data);
                else if (_id === "Locations") setLocationList(data);
@@ -132,36 +110,19 @@ export default function EditRole() {
 
    const handleEditRole = async () => {
       try {
-         await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/company/" +
-               companyId +
-               "/role/" +
-               id,
-            { ...role },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         await AxiosInstance.patch("/company/" + companyId + "/role/" + id, {
+            ...role,
+         });
 
-         await axios.patch(
-            "https://tpp-backend-eura.onrender.com/api/v1/extra/skills",
-            {
-               data: [
-                  ...new Set([
-                     ...role.mandatorySkills,
-                     ...role.optionalSkills,
-                     ...skillsList,
-                  ]),
-               ],
-            },
-            {
-               headers: {
-                  authorization: JSON.parse(localStorage.getItem("user")).token,
-               },
-            }
-         );
+         await AxiosInstance.patch("/extra/skills", {
+            data: [
+               ...new Set([
+                  ...role.mandatorySkills,
+                  ...role.optionalSkills,
+                  ...skillsList,
+               ]),
+            ],
+         });
          toast.success("Role Edited Successfully");
          navigate(`/EditEmpanelled/${companyId}?edit=true`);
       } catch (error) {
