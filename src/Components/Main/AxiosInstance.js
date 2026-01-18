@@ -1,7 +1,7 @@
 import axios from "axios";
 const AxiosInstance = axios.create({
-   baseURL: "http://localhost:5000/api/v1", // Change to your API base URL for localhost
-   // baseURL: "https://tpp-backend-9xoz.onrender.com/api/v1", // Change to your API base URL
+   //baseURL: "http://localhost:5000/api/v1", // Change to your API base URL for localhost
+   baseURL: "https://tpp-backend-9xoz.onrender.com/api/v1", // Change to your API base URL
    headers: {
       "Content-Type": "application/json",
    },
