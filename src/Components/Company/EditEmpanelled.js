@@ -168,7 +168,7 @@ export default function EditEmpanelled() {
                         onClick={() =>
                            navigate(
                               "/CandidateGrid?type=CompanyInterviewScheduled&&roleId=" +
-                                 props.data._id
+                                 props.data._id,
                            )
                         }
                      >
@@ -192,7 +192,7 @@ export default function EditEmpanelled() {
                         onClick={() =>
                            navigate(
                               "/CandidateGrid?type=Rejects&&roleId=" +
-                                 props.data._id
+                                 props.data._id,
                            )
                         }
                      >
@@ -216,7 +216,7 @@ export default function EditEmpanelled() {
                         onClick={() =>
                            navigate(
                               "/CandidateGrid?type=AwaitingJoining&&roleId=" +
-                                 props.data._id
+                                 props.data._id,
                            )
                         }
                      >
@@ -240,7 +240,7 @@ export default function EditEmpanelled() {
                         onClick={() =>
                            navigate(
                               "/CandidateGrid?type=OfferDrop&&roleId=" +
-                                 props.data._id
+                                 props.data._id,
                            )
                         }
                      >
@@ -264,7 +264,7 @@ export default function EditEmpanelled() {
                         onClick={() =>
                            navigate(
                               "/CandidateGrid?type=joined&&roleId=" +
-                                 props.data._id
+                                 props.data._id,
                            )
                         }
                      >
@@ -289,7 +289,7 @@ export default function EditEmpanelled() {
                            size="small"
                            onClick={() =>
                               navigate(
-                                 `/EditRole/${id}/${props.data._id}?edit=false`
+                                 `/EditRole/${id}/${props.data._id}?edit=false`,
                               )
                            }
                         >
@@ -306,7 +306,7 @@ export default function EditEmpanelled() {
                                        color="secondary"
                                        onClick={() =>
                                           navigate(
-                                             `/EditRole/${id}/${props.data._id}?edit=true`
+                                             `/EditRole/${id}/${props.data._id}?edit=true`,
                                           )
                                        }
                                     >
@@ -366,7 +366,7 @@ export default function EditEmpanelled() {
    function handleRemoveMobile(j, i) {
       var HRs = [...company.HR];
       HRs[j].HRMobile = [...company.HR[j].HRMobile].filter(
-         (_, indexFilter) => !(indexFilter === i)
+         (_, indexFilter) => !(indexFilter === i),
       );
       setCompany({ ...company, HR: HRs });
    }
@@ -382,7 +382,7 @@ export default function EditEmpanelled() {
    }
    function handleDeleteHR(j) {
       const newHR = [...company.HR].filter(
-         (_, indexFilter) => !(indexFilter === j)
+         (_, indexFilter) => !(indexFilter === j),
       );
       setCompany({ ...company, HR: newHR });
    }
@@ -416,7 +416,7 @@ export default function EditEmpanelled() {
    const handleRoleDelete = async () => {
       try {
          await AxiosInstance.delete(
-            "/company/" + id + "/role/" + deleteData._id
+            "/company/" + id + "/role/" + deleteData._id,
          );
          setCompany({
             ...company,
@@ -498,7 +498,7 @@ export default function EditEmpanelled() {
                                  <MenuItem key={option} value={option}>
                                     {option}
                                  </MenuItem>
-                              )
+                              ),
                            )}
                         </TextField>
                      </Grid>
@@ -550,7 +550,7 @@ export default function EditEmpanelled() {
                                                 sx={{
                                                    backgroundColor: alpha(
                                                       "#0000FF",
-                                                      0.1
+                                                      0.1,
                                                    ),
                                                    "& th": {
                                                       fontWeight: 700,
@@ -603,12 +603,12 @@ export default function EditEmpanelled() {
                                                             ? "transparent"
                                                             : alpha(
                                                                  "#000",
-                                                                 0.01
+                                                                 0.01,
                                                               ),
                                                       "&:hover": {
                                                          backgroundColor: alpha(
                                                             "#0000FF",
-                                                            0.02
+                                                            0.02,
                                                          ),
                                                       },
                                                       borderBottom:
@@ -771,32 +771,32 @@ export default function EditEmpanelled() {
                                                                      fullWidth
                                                                      value={x}
                                                                      onChange={(
-                                                                        e
+                                                                        e,
                                                                      ) => {
                                                                         if (
                                                                            !/^\d*$/.test(
                                                                               e
                                                                                  .target
-                                                                                 .value
+                                                                                 .value,
                                                                            )
                                                                         )
                                                                            toast.warning(
-                                                                              "Only numbers allowed"
+                                                                              "Only numbers allowed",
                                                                            );
                                                                         handleMobileChange(
                                                                            e,
                                                                            j,
-                                                                           i
+                                                                           i,
                                                                         );
                                                                      }}
                                                                      onBlur={(
-                                                                        e
+                                                                        e,
                                                                      ) => {
                                                                         if (
                                                                            !/^\d{10}$/.test(
                                                                               e
                                                                                  .target
-                                                                                 .value
+                                                                                 .value,
                                                                            )
                                                                         ) {
                                                                            if (
@@ -808,14 +808,14 @@ export default function EditEmpanelled() {
                                                                            )
                                                                               return;
                                                                            toast.warning(
-                                                                              "Mobile number should be 10 digits"
+                                                                              "Mobile number should be 10 digits",
                                                                            );
                                                                            return;
                                                                         }
                                                                         checkNumber(
                                                                            e
                                                                               .target
-                                                                              .value
+                                                                              .value,
                                                                         );
                                                                      }}
                                                                      InputProps={{
@@ -833,7 +833,7 @@ export default function EditEmpanelled() {
                                                                      }}
                                                                   />
                                                                </Grid>
-                                                            )
+                                                            ),
                                                          )}
                                                          {editable &&
                                                             y.HRMobile.length >
@@ -852,7 +852,7 @@ export default function EditEmpanelled() {
                                                                         color="primary"
                                                                         onClick={() =>
                                                                            handleAddMobile(
-                                                                              j
+                                                                              j,
                                                                            )
                                                                         }
                                                                      >
@@ -875,7 +875,7 @@ export default function EditEmpanelled() {
                                                                                  y
                                                                                     .HRMobile
                                                                                     .length -
-                                                                                    1
+                                                                                    1,
                                                                               )
                                                                            }
                                                                         >
@@ -899,14 +899,14 @@ export default function EditEmpanelled() {
                                                                   1
                                                                ) {
                                                                   toast.warning(
-                                                                     "At least one HR is required"
+                                                                     "At least one HR is required",
                                                                   );
                                                                   return;
                                                                }
                                                                const newHR =
                                                                   company.HR.filter(
                                                                      (_, i) =>
-                                                                        i !== j
+                                                                        i !== j,
                                                                   );
                                                                setCompany({
                                                                   ...company,
@@ -948,7 +948,7 @@ export default function EditEmpanelled() {
                                              marginTop: "2vh",
                                              backgroundColor: alpha(
                                                 "#0000FF",
-                                                0.6
+                                                0.6,
                                              ),
                                              padding: "10px 20px",
                                              fontWeight: 600,
@@ -1192,7 +1192,7 @@ export default function EditEmpanelled() {
                   </Grid>
                   <Grid container xs={12}>
                      <div
-                        className="ag-theme-quartz-dark"
+                        className="ag-theme-quartz-dark custom-grid"
                         style={{
                            height: "100%",
                            width: "98%",
@@ -1207,7 +1207,7 @@ export default function EditEmpanelled() {
                               access
                                  ? company.roles
                                  : company.roles.filter(
-                                      (v) => v.status === true
+                                      (v) => v.status === true,
                                    )
                            }
                            columnDefs={column}

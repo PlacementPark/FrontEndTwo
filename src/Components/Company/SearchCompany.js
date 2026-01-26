@@ -368,7 +368,7 @@ export default function SearchCompany() {
                <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.2) }}>
                   <Grid container>
                      <div
-                        className="ag-theme-quartz-dark"
+                        className="ag-theme-quartz-dark custom-grid"
                         style={{
                            height: "100%",
                            width: "100%",

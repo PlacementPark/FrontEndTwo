@@ -81,16 +81,16 @@ export default function AdminDashboard() {
       {/* Button Cards */}
       <Grid container columnSpacing={5} rowSpacing={3} sx={{ paddingTop: "5vh" }}>
         {[
-          { title: "DAILY PERFORMANCE", color: "#FF5C00", path: "/dailygrid?employeeType=Recruiter" },
-          { title: "MONTHLY PERFORMANCE", color: "#FF0000", path: "/monthlygrid?employeeType=Recruiter" },
-          { title: "BUSINESS PERFORMANCE", color: "#00FF00", path: "/businessgrid" },
-          { title: "PORTAL UPDATES", color:"#00FFFF", path: "/portalupdates?employeeType=Recruiter"},
-          { title: "COMPANY CONTRIBUTION 1", color:"#FF00FF", path: "/contributionp1?companyType=Not Intrested"},
+          { title: "DAILY PERFORMANCE", color: "#FF5C00", path: "/underdevelopment" },
+          { title: "MONTHLY PERFORMANCE", color: "#FF0000", path: "/underdevelopment" },
+          { title: "BUSINESS PERFORMANCE", color: "#00FF00", path: "/businessgunderdevelopmentrid" },
+          { title: "PORTAL UPDATES", color:"#00FFFF", path: "/underdevelopment"},
+          { title: "COMPANY CONTRIBUTION 1", color:"#FF00FF", path: "/underdevelopment"},
           { title: "COMPANY CONTRIBUTION 2", color:"#FF5C00", path: "/underdevelopment"},
           { title: "BULK UPLOADS", color:"#FF0000", path: "/bulkupload"},
           { title: "ADD EXTRAS", color:"#00FF00", path: "/AddExtras"},
           { title: "PIE CHARTS", color: "#00FFFF", path: "/underdevelopment" },
-          { title: "ANALYSIS", color: "#FF00FF", path: "/piechart?type=L1WD" },
+          { title: "ANALYSIS", color: "#FF00FF", path: "/underdevelopment" },
         ].map((item, i) => (
           <Grid item xs={12} sm={6} key={i}>
             <Card

@@ -100,17 +100,46 @@ export default function SearchProfile() {
    const paginationPageSizeSelector = React.useMemo(() => {
       return [200, 500, 1000];
    }, []);
+   const formatUtcToIST = (utcIso) => {
+      if (!utcIso) return "";
+      const iso = utcIso.endsWith("Z") ? utcIso : `${utcIso}Z`;
+      const d = new Date(iso);
 
+      const parts = new Intl.DateTimeFormat("en-IN", {
+         timeZone: "Asia/Kolkata",
+         day: "2-digit",
+         month: "2-digit",
+         year: "numeric",
+         // hour: "2-digit",
+         // minute: "2-digit",
+         // hour12: true,
+      }).formatToParts(d);
+
+      const get = (t) => parts.find((p) => p.type === t)?.value || "";
+      // return `${get("day")}-${get("month")}-${get("year")} ${get("hour")}:${get("minute")} ${get("dayPeriod")}`;
+      return `${get("day")}-${get("month")}-${get("year")}`;
+   
+   };
+   
    const column = [
       { headerName: "Candidate Name", field: "fullName" },
       { headerName: "Candidate ID", field: "candidateId" },
       { headerName: "Candidate Number", field: "mobile", sortable: false },
-      { headerName: "Created By", field:"createdByEmployee.name"},
-      { headerName: "Assigned to", field:"assignedEmployee.name"},
-      { headerName: "Created & Assigned Dates", field: "" },
-      { headerName: "L1 Status", field:"l1Assessment"},
-      { headerName: "L2 Status", field:"l2Assessment"},
-      { headerName: "Interview Status", field:"interviewStatus"},
+      { headerName: "Created By", field: "createdByEmployee.name" },
+      { headerName: "Assigned to", field: "assignedEmployee.name" },
+      {
+         headerName: "Created & Assigned Dates",
+         valueGetter: (params) => {
+            const created = formatUtcToIST(params.data?.createdOn); // backend field name
+            const assigned = formatUtcToIST(params.data?.assignedOn); // backend field name
+
+            if (created && assigned) return `${created} | ${assigned}`;
+            return created || assigned || "-";
+         },
+      },
+      { headerName: "L1 Status", field: "l1Assessment" },
+      { headerName: "L2 Status", field: "l2Assessment" },
+      { headerName: "Interview Status", field: "interviewStatus" },
       {
          headerName: "Actions",
          width: isAdmin ? "350px" : "250px",
@@ -143,9 +172,9 @@ export default function SearchProfile() {
                            disabled={
                               !rtAccess
                                  ? false
-                                 : props.data.assignedEmployee === empId
-                                 ? false
-                                 : true
+                                 : props.data.assignedEmployee._id === empId
+                                   ? false
+                                   : true
                            }
                         >
                            <BorderColorTwoToneIcon />
@@ -307,7 +336,7 @@ export default function SearchProfile() {
                <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.2) }}>
                   <Grid container>
                      <div
-                        className="ag-theme-quartz-dark"
+                        className="ag-theme-quartz-dark custom-grid"
                         style={{
                            height: "100%",
                            width: "100%",

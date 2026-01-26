@@ -60,7 +60,7 @@ export default function AssignCandidateGrid(props) {
          try {
             const candidates = await AxiosInstance.post(
                "/candidate/candidate/assignSearch",
-               { query: { ...location.state.query } }
+               { query: { ...location.state.query } },
             );
             const empres = await AxiosInstance.get("/employee");
             setEmployeeList(empres.data.employees);
@@ -108,8 +108,8 @@ export default function AssignCandidateGrid(props) {
                               !rtAccess
                                  ? false
                                  : props.data.assignedEmployee === empId
-                                 ? false
-                                 : true
+                                   ? false
+                                   : true
                            }
                         >
                            <BorderColorTwoToneIcon />
@@ -245,10 +245,10 @@ export default function AssignCandidateGrid(props) {
             ids: selectedIds,
          });
          setPotentialLeadList((prev) =>
-            prev.filter((d) => !selectedIds.includes(d._id))
+            prev.filter((d) => !selectedIds.includes(d._id)),
          );
          setTableData((prev) =>
-            prev.filter((d) => !selectedIds.includes(d._id))
+            prev.filter((d) => !selectedIds.includes(d._id)),
          );
          toast.update(toastId, {
             render: `Successfully deleted ${selectedIds.length} candidate(s)`,
@@ -305,9 +305,9 @@ export default function AssignCandidateGrid(props) {
                      return !selectedRows
                         .map((row) => row._id)
                         .includes(lead._id);
-                  })
+                  }),
                ),
-            setWarning("")
+            setWarning(""),
          );
       } catch (error) {}
    };
@@ -324,7 +324,7 @@ export default function AssignCandidateGrid(props) {
          const response = await AxiosInstance.post(
             "/candidate/excelExport",
             { ids: selectedIds, name: fileName },
-            { responseType: "blob" }
+            { responseType: "blob" },
          );
          const url = window.URL.createObjectURL(new Blob([response.data]));
          const link = document.createElement("a");
@@ -513,7 +513,7 @@ export default function AssignCandidateGrid(props) {
                         )}
                      </Grid>
                   </Grid>
-                  <div className="ag-theme-quartz-dark">
+                  <div className="ag-theme-quartz-dark custom-grid">
                      <AgGridReact
                         ref={gridapi}
                         domLayout="autoHeight"

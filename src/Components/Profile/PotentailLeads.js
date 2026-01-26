@@ -96,12 +96,9 @@ export default function PotentialLeads() {
       const fetchData = async () => {
          try {
             const res = await AxiosInstance.get(
-               "/company/candidateCompanyType?companyType=Empanelled"
+               "/company/candidateCompanyType?companyType=Empanelled",
             );
-            const empres = await AxiosInstance.get(
-               "/employee",
-               
-            );
+            const empres = await AxiosInstance.get("/employee");
 
             setCompaniesList(res.data);
             setEmployeeList(empres.data.employees);
@@ -258,7 +255,7 @@ export default function PotentialLeads() {
                headers: {
                   authorization: JSON.parse(localStorage.getItem("user")).token,
                },
-            }
+            },
          );
          setTimeout(() => {
             setPotentialLeadList(res.data);
@@ -302,7 +299,7 @@ export default function PotentialLeads() {
                headers: {
                   authorization: JSON.parse(localStorage.getItem("user")).token,
                },
-            }
+            },
          );
          setTimeout(
             () =>
@@ -311,9 +308,9 @@ export default function PotentialLeads() {
                      return !selectedRows
                         .map((row) => row._id)
                         .includes(lead._id);
-                  })
+                  }),
                ),
-            setWarning("")
+            setWarning(""),
          );
       } catch (error) {}
    };
@@ -597,7 +594,7 @@ export default function PotentialLeads() {
                      </Grid>
                   </Grid>
                   <div
-                     className="ag-theme-quartz-dark"
+                     className="ag-theme-quartz-dark custom-grid"
                      style={{
                         height: "100%",
                         width: "100%",

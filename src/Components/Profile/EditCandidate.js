@@ -43,10 +43,10 @@ import { OpenInNew } from "@mui/icons-material";
 export default function EditCandidate() {
    // STATES HANDLING AND VARIABLES
    const navigate = useNavigate();
-   const { employeeType,userid } = useSelector((state) => state.user);
+   const { employeeType, userid } = useSelector((state) => state.user);
    const access = !["Recruiter", "Intern"].includes(employeeType);
    const TMAAccess = !["Recruiter", "Intern"].includes(employeeType);
-   const [remarks,setRemarks] = React.useState("");
+   const [remarks, setRemarks] = React.useState("");
    const rtAccess = [
       "Recruiter",
       "Intern",
@@ -98,7 +98,7 @@ export default function EditCandidate() {
       companyId: null,
       roleId: null,
       interviewDate: null,
-      remarks: "",
+    
       interviewStatus: null,
       select: null,
       EMP_ID: "",
@@ -109,8 +109,9 @@ export default function EditCandidate() {
       l2Assessment: "",
       billingDate: null,
       invoiceNumber: "",
+      invoiceCreditDate: null,
       invoiceDate: null,
-      lastUpdatedOn:null,
+      lastUpdatedOn: null,
       createdOn: null,
       l1StatDate: null,
       l2StatDate: null,
@@ -136,11 +137,11 @@ export default function EditCandidate() {
          try {
             const canres = await AxiosInstance.get(url);
             const res = await AxiosInstance.get(
-               "/company/candidateCompanyType?companyType=Empanelled"
+               "/company/candidateCompanyType?companyType=Empanelled",
             );
             const extraRes = await AxiosInstance.get("/extra/all");
             const remarksRes = await AxiosInstance.get(
-               "remarks/candidate/" + id
+               "remarks/candidate/" + id,
             );
             setCandidate({ ...candidate, ...canres.data });
             setCompaniesList(res.data.data);
@@ -158,23 +159,48 @@ export default function EditCandidate() {
       };
       fetchData();
    }, [url]);
+   const formatUtcToIST = (utcIso) => {
+      const iso = utcIso?.endsWith("Z") ? utcIso : `${utcIso}Z`;
+      const d = new Date(iso);
 
+      const parts = new Intl.DateTimeFormat("en-IN", {
+         timeZone: "Asia/Kolkata",
+         day: "2-digit",
+         month: "2-digit",
+         year: "numeric",
+         hour: "2-digit",
+         minute: "2-digit",
+         hour12: true,
+      }).formatToParts(d);
+
+      const get = (type) => parts.find((p) => p.type === type)?.value || "";
+
+      const dd = get("day");
+      const mm = get("month");
+      const yyyy = get("year");
+      const hh = get("hour");
+      const min = get("minute");
+      const ampm = get("dayPeriod"); // AM / PM
+
+      return `${dd}-${mm}-${yyyy} ${hh}:${min} ${ampm}`;
+   };
    // FUNCTIONS HANDLING AND API POST CALLS
    const handleExpandCompany = () => {
       setExpandedCompany(!expandedCompany);
    };
-   const handleAddRemarks = async ()=>{
+   const handleAddRemarks = async () => {
+      if (remarks == "") return;
       const addedRemarks = await AxiosInstance.post("/remarks", {
          remarks: remarks,
          employeeId: userid,
          candidateId: id,
       });
       var rem = remarksList;
-      rem.push(addedRemarks.data)
-      rem.sort((a,b)=>new Date(b.createdAt)-new Date(a.createdAt))
-      setRemarksList(rem)
-      setRemarks("")
-   }
+      rem.push(addedRemarks.data);
+      rem.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setRemarksList(rem);
+      setRemarks("");
+   };
 
    const handleEditCandidate = async () => {
       var flag = 0;
@@ -189,11 +215,11 @@ export default function EditCandidate() {
                (ind === 0
                   ? "1st"
                   : ind === 1
-                  ? "2nd"
-                  : ind === 2
-                  ? "3rd"
-                  : ind + 1 + "th") +
-               " Mobile Number"
+                    ? "2nd"
+                    : ind === 2
+                      ? "3rd"
+                      : ind + 1 + "th") +
+               " Mobile Number",
          );
          flag = 1;
       }
@@ -271,7 +297,7 @@ export default function EditCandidate() {
                ? candidate.companyId._id
                : candidate.companyId,
             roleId: candidate.roleId ? candidate.roleId._id : candidate.roleId,
-            lastUpdatedOn: new Date()
+            lastUpdatedOn: new Date(),
          });
          await AxiosInstance.patch("/extra/skills", {
             data: [...new Set([...candidate.skills, ...skillsList])],
@@ -360,7 +386,7 @@ export default function EditCandidate() {
                               });
                               if (!e.target.validity.valid) {
                                  toast.warning(
-                                    "Only Alphabets and Space allowed in Name!"
+                                    "Only Alphabets and Space allowed in Name!",
                                  );
                               }
                            }}
@@ -402,7 +428,7 @@ export default function EditCandidate() {
                               });
                               if (!e.target.validity.valid) {
                                  toast.warning(
-                                    "Only Alphabets and Space allowed in Name!"
+                                    "Only Alphabets and Space allowed in Name!",
                                  );
                               }
                            }}
@@ -423,7 +449,7 @@ export default function EditCandidate() {
                                  onChange={(e) => {
                                     if (!/^\d*$/.test(e.target.value))
                                        toast.warning(
-                                          "Only Number allowed in Mobile"
+                                          "Only Number allowed in Mobile",
                                        );
                                     candidate.mobile[i] = e.target.value;
                                     setCandidate({
@@ -440,7 +466,7 @@ export default function EditCandidate() {
                                     if (!/^\d{10}$/.test(e.target.value)) {
                                        if (e.target.value.length === 0) return;
                                        toast.warning(
-                                          "Mobile number should be 10 digits"
+                                          "Mobile number should be 10 digits",
                                        );
                                        return;
                                     }
@@ -488,7 +514,7 @@ export default function EditCandidate() {
                                           ...candidate,
                                           mobile: [...candidate.mobile].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -522,7 +548,7 @@ export default function EditCandidate() {
                                     if (!editable) return;
                                     if (
                                        !/^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[A-Za-z]+$/.test(
-                                          e.target.value
+                                          e.target.value,
                                        )
                                     ) {
                                        if (e.target.value.length === 0) return;
@@ -572,7 +598,7 @@ export default function EditCandidate() {
                                           ...candidate,
                                           email: [...candidate.email].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -745,7 +771,7 @@ export default function EditCandidate() {
                                              ...candidate.languages,
                                           ].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -867,7 +893,7 @@ export default function EditCandidate() {
                                              ...candidate.qualifications,
                                           ].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -889,10 +915,10 @@ export default function EditCandidate() {
                            value={candidate.skills}
                            onChange={(e, v) => {
                               const skillsToSplit = v.filter((v) =>
-                                 v.includes(" ")
+                                 v.includes(" "),
                               );
                               const remSkills = v.filter(
-                                 (v) => !v.includes(" ")
+                                 (v) => !v.includes(" "),
                               );
                               const skillsToPush = [];
                               skillsToSplit.forEach((element) => {
@@ -1118,7 +1144,7 @@ export default function EditCandidate() {
                                                    sx={{
                                                       backgroundColor: alpha(
                                                          "#0000FF",
-                                                         0.5
+                                                         0.5,
                                                       ),
                                                       height: "100%",
                                                    }}
@@ -1148,7 +1174,9 @@ export default function EditCandidate() {
                                                          ...candidate.experience,
                                                       ].filter(
                                                          (_, indexFilter) =>
-                                                            !(indexFilter === i)
+                                                            !(
+                                                               indexFilter === i
+                                                            ),
                                                       ),
                                                    });
                                                 }}
@@ -1156,7 +1184,7 @@ export default function EditCandidate() {
                                                    height: "100%",
                                                    backgroundColor: alpha(
                                                       "#FF0000",
-                                                      0.6
+                                                      0.6,
                                                    ),
                                                 }}
                                                 endIcon={
@@ -1248,27 +1276,9 @@ export default function EditCandidate() {
                            </Grid>
                         </>
                      )}
-                     <Grid item xs={12}>
-                        <TextField
-                           id="candidateRemarks"
-                           label="Remarks"
-                           variant="outlined"
-                           fullWidth
-                           value={candidate.remarks}
-                           onChange={(e) =>
-                              setCandidate({
-                                 ...candidate,
-                                 remarks: e.target.value,
-                              })
-                           }
-                           multiline
-                           InputProps={{
-                              readOnly: !editable,
-                           }}
-                        />
-                     </Grid>
+                     
                      {["WD", "TAC", "GOOD"].includes(
-                        candidate.l1Assessment
+                        candidate.l1Assessment,
                      ) && (
                         <>
                            <Grid item xs={5}>
@@ -1503,6 +1513,9 @@ export default function EditCandidate() {
                         candidate.interviewStatus === "Select" &&
                         [
                            "Tracking",
+
+                           "Billed & Tracking",
+                           "Billed",
                            "Billing",
                            "Need to Bill",
                            "Invoice Processed",
@@ -1637,7 +1650,7 @@ export default function EditCandidate() {
                                           });
                                        }}
                                        value={dayjs(
-                                          candidate.invoiceCreditDate
+                                          candidate.invoiceCreditDate,
                                        )}
                                        readOnly={!(TMAAccess && editable)}
                                     />
@@ -1686,7 +1699,7 @@ export default function EditCandidate() {
                            "Non Tenure",
                            "Process Rampdown",
                            "Client Rampdown",
-                           "Tenure-Source Conflit",
+                           "Tenure-Source Conflict",
                            "BGV Reject-Post",
                         ].includes(candidate.select) && (
                            <>
@@ -1734,24 +1747,26 @@ export default function EditCandidate() {
                                     />
                                  </LocalizationProvider>
                               </Grid>
-                              <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateRate"
-                                    type="Number"
-                                    label="Rate"
-                                    value={candidate.rate}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          rate: e.target.value,
-                                       })
-                                    }
-                                    fullWidth
-                                    InputProps={{
-                                       readOnly: !(TMAAccess && editable),
-                                    }}
-                                 />
-                              </Grid>
+                              {!rtAccess && (
+                                 <Grid item xs={4}>
+                                    <TextField
+                                       id="candidateRate"
+                                       type="Number"
+                                       label="Rate"
+                                       value={candidate.rate}
+                                       onChange={(e) =>
+                                          setCandidate({
+                                             ...candidate,
+                                             rate: e.target.value,
+                                          })
+                                       }
+                                       fullWidth
+                                       InputProps={{
+                                          readOnly: !(TMAAccess && editable),
+                                       }}
+                                    />
+                                 </Grid>
+                              )}
                            </>
                         )}
                      <Grid item xs={9} />
@@ -1829,7 +1844,6 @@ export default function EditCandidate() {
                            <Card
                               sx={{
                                  borderRadius: "20px",
-                                 
                               }}
                            >
                               <CardHeader
@@ -1842,13 +1856,7 @@ export default function EditCandidate() {
                                     </Avatar>
                                  }
                                  title={remark.employeeId.name}
-                                 subheader={
-                                    remark.createdAt.split("T")[0] +
-                                    " " +
-                                    remark.createdAt
-                                       .split("T")[1]
-                                       .substring(0, 8)
-                                 }
+                                 subheader={formatUtcToIST(remark.createdAt)}
                               />
                               <CardContent>
                                  <Typography variant="body">

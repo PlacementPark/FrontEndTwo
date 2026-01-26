@@ -1,7 +1,13 @@
 import axios from "axios";
+
+// Determine which API to use - try localhost first, fallback to backend
+const getBaseURL = () => {
+   // Try localhost first for local development
+   return "http://localhost:5000/api/v1";
+};
+
 const AxiosInstance = axios.create({
-   //baseURL: "http://localhost:5000/api/v1", // Change to your API base URL for localhost
-   baseURL: "https://tpp-backend-9xoz.onrender.com/api/v1", // Change to your API base URL
+   baseURL: getBaseURL(),
    headers: {
       "Content-Type": "application/json",
    },
@@ -16,7 +22,31 @@ AxiosInstance.interceptors.request.use(
       }
       return config;
    },
-   (error) => Promise.reject(error)
+   (error) => Promise.reject(error),
+);
+
+// Response interceptor to handle errors and fallback to backend
+AxiosInstance.interceptors.response.use(
+   (response) => response,
+   async (error) => {
+      const originalRequest = error.config;
+
+      // If localhost fails (connection refused, network error, 503), try backend API
+      if (
+         !originalRequest._retry &&
+         (error.code === "ERR_NETWORK" ||
+            error.code === "ECONNREFUSED" ||
+            error.message?.includes("ECONNREFUSED") ||
+            error.response?.status === 503)
+      ) {
+         originalRequest._retry = true;
+         originalRequest.baseURL =
+            "https://tpp-backend-eura.onrender.com/api/v1";
+         return AxiosInstance(originalRequest);
+      }
+
+      return Promise.reject(error);
+   },
 );
 
 export default AxiosInstance;

@@ -10,7 +10,7 @@ export const L1_STATUS = [
    "WD",
    "TAC",
    "GOOD",
-];
+].sort();
 export const L2_STATUS = [
    null,
    "DND",
@@ -24,8 +24,8 @@ export const L2_STATUS = [
    "WD",
    "TAC",
    "GOOD",
-];
-export const PERIOD_LIST = ["Permanent", "Contract", "Notice Period", "Buyout"];
+].sort();
+export const PERIOD_LIST = ["Permanent", "Contract", "Notice Period", "Buyout"].sort();
 export const INTERVIEW_STATUS = [
    "TPP Venue",
    "Client Venue",
@@ -60,7 +60,6 @@ export const INTERVIEW_STATUS = [
    "Select",
    "TPP Venue-R",
    "Client Venue-R",
-   "Pending Training",
    "Virtual-R",
    "Pending Re-Versant",
    "Pending Re-Amcat",
@@ -70,7 +69,7 @@ export const INTERVIEW_STATUS = [
    "TPP Intern",
    "Cooling Period",
    "BGV Reject-Pre",
-];
+].sort();
 
 export const EMPLOYEE_TYPE = [
    "Recruiter",
@@ -79,7 +78,7 @@ export const EMPLOYEE_TYPE = [
    "Intern",
    "Business Development",
    "Admin",
-];
+].sort();
 export const RESPONSE = [
    "Empanelled",
    "Need to Approach",
@@ -88,8 +87,8 @@ export const RESPONSE = [
    "Not Intrested",
    "Rejected",
    "No Response",
-];
-export const PROCESS_TYPE = ["International", "Domestic"];
+].sort();
+export const PROCESS_TYPE = ["International", "Domestic"].sort();
 export const SELECT_STATUS = [
    "Tracking",
    "Non Tenure",
@@ -101,27 +100,29 @@ export const SELECT_STATUS = [
    "BGV Reject-Post",
    "Tenure-Source Conflict",
    "Billed & Tracking",
-   "Tracking & NR"
-];
+   "Tracking & NR",
+].sort();
 export const LANGUAGE_LEVEL = [
    "Poor",
    "Managable",
    "Above Managable",
    "Excellent",
-];
+].sort();
 
-export const SOURCE = ["Candidate Reference",
-"Personal Reference",
-"Direct Walkin",
-"TPP Social Media",
-"CEO Reference",
-"Naukri",
-"FoundIT",
-"Quikr",
-"Shine",
-"Apna",
-"Indeed",
-"LinkedIn",
-"SubVendor/Freelancer",
-"Old Data",
-"Bulk Data"]
+export const SOURCE = [
+   "Candidate Reference",
+   "Personal Reference",
+   "Direct Walkin",
+   "TPP Social Media",
+   "CEO Reference",
+   "Naukri",
+   "FoundIT",
+   "Quikr",
+   "Shine",
+   "Apna",
+   "Indeed",
+   "LinkedIn",
+   "SubVendor/Freelancer",
+   "Old Data",
+   "Bulk Data",
+].sort();

@@ -30,9 +30,7 @@ import CheckCircleTwoToneIcon from "@mui/icons-material/CheckCircleTwoTone";
 import CancelTwoToneIcon from "@mui/icons-material/CancelTwoTone";
 import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
 import AxiosInstance from "../Main/AxiosInstance";
-import {
-   EMPLOYEE_TYPE
-} from "../Main/Constants";
+import { EMPLOYEE_TYPE } from "../Main/Constants";
 export default function SearchAccount() {
    // STATES HANDLING AND VARIABLES
    const { employeeType, userid } = useSelector((state) => state.user);
@@ -128,7 +126,6 @@ export default function SearchAccount() {
          headerName: "Employee Type",
          field: "employeeType",
          width: "200px",
-         
       },
       {
          headerName: "Employee Status",
@@ -166,7 +163,7 @@ export default function SearchAccount() {
                            size="small"
                            onClick={() =>
                               navigate(
-                                 `/EditEmployee/${props.data._id}?edit=false`
+                                 `/EditEmployee/${props.data._id}?edit=false`,
                               )
                            }
                         >
@@ -179,7 +176,7 @@ export default function SearchAccount() {
                            color="secondary"
                            onClick={() =>
                               navigate(
-                                 `/EditEmployee/${props.data._id}?edit=true`
+                                 `/EditEmployee/${props.data._id}?edit=true`,
                               )
                            }
                         >
@@ -300,10 +297,7 @@ export default function SearchAccount() {
                               })
                            }
                            renderInput={(params) => (
-                              <TextField
-                                 {...params}
-                                 label="Designation"
-                              />
+                              <TextField {...params} label="Designation" />
                            )}
                         />
                      </Grid>
@@ -361,7 +355,7 @@ export default function SearchAccount() {
                <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.2) }}>
                   <Grid container>
                      <div
-                        className="ag-theme-quartz-dark"
+                        className="ag-theme-quartz-dark custom-grid"
                         style={{
                            height: "100%",
                            width: "100%",

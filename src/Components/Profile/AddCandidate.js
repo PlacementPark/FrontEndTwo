@@ -18,12 +18,15 @@ import {
    Collapse,
    alpha,
 } from "@mui/material";
-import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import Typography from "@mui/material/Typography";
+import { red } from "@mui/material/colors";
+import Avatar from "@mui/material/Avatar";
 import dayjs from "dayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
-import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import ControlPointIcon from "@mui/icons-material/ControlPoint";
 import RemoveCircleOutlineIcon from "@mui/icons-material/RemoveCircleOutline";
@@ -34,20 +37,22 @@ import {
    SELECT_STATUS,
    INTERVIEW_STATUS,
    LANGUAGE_LEVEL,
+   SOURCE,
 } from "../Main/Constants";
-export default function AddCandidate(props) {
+import { OpenInNew } from "@mui/icons-material";
+export default function AddCandidate() {
    // STATES HANDLING AND VARIABLES
    const navigate = useNavigate();
    const { employeeType, userid } = useSelector((state) => state.user);
-   const access = !["Recruiter", "Intern"].includes(employeeType);
+   const [remarks, setRemarks] = React.useState("");
+   const [expandedCompany, setExpandedCompany] = React.useState(false);
    const [companiesList, setCompaniesList] = React.useState([]);
    const [rolesList, setRolesList] = React.useState([]);
    const [skillsList, setSkillsList] = React.useState([]);
    const [locationList, setLocationList] = React.useState([]);
    const [qualificationList, setQualificationList] = React.useState([]);
-   const [languageList, setLanguageList] = React.useState([]);
-   const [expandedCompany, setExpandedCompany] = React.useState(false);
-   
+   const [languageList, setLanguageList] = React.useState([{ language: " " }]);
+   const [remarksList, setRemarksList] = React.useState([]);
    const [candidate, setCandidate] = React.useState({
       fullName: "",
       mobile: [""],
@@ -81,18 +86,20 @@ export default function AddCandidate(props) {
       companyId: null,
       roleId: null,
       interviewDate: null,
-      remarks: "",
-      rate: 0,
+      
       interviewStatus: null,
       select: null,
       EMP_ID: "",
+      rate: 0,
       onboardingDate: null,
       nextTrackingDate: null,
-      l1Assessment: null,
-      l2Assessment: null,
+      l1Assessment: "",
+      l2Assessment: "",
       billingDate: null,
       invoiceNumber: "",
       invoiceDate: null,
+      invoiceCreditDate:null,
+      lastUpdatedOn: null,
       createdOn: null,
       l1StatDate: null,
       l2StatDate: null,
@@ -101,7 +108,9 @@ export default function AddCandidate(props) {
       selectDate: null,
       offerDropDate: null,
       nonTenureDate: null,
-      assignedOn: null
+      endTrackingDate: null,
+      tag: "",
+      source: "",
    });
 
    // API CALLS HANDLING
@@ -109,83 +118,161 @@ export default function AddCandidate(props) {
       const fetchData = async () => {
          try {
             const res = await AxiosInstance.get(
-               "/company/candidateCompanyType?companyType=Empanelled"
+               "/company/candidateCompanyType?companyType=Empanelled",
             );
             const extraRes = await AxiosInstance.get("/extra/all");
 
-            setCompaniesList(res.data);
+            setCompaniesList(res.data.data);
             extraRes.data.forEach(({ _id, data }) => {
                if (_id === "Skills") setSkillsList(data);
                else if (_id === "Locations") setLocationList(data);
                else if (_id === "Qualifications") setQualificationList(data);
                else if (_id === "Languages") setLanguageList(data);
-               });
+            });
          } catch (error) {}
       };
       fetchData();
    }, []);
 
+   const formatUtcToIST = (utcIso) => {
+      const iso = utcIso?.endsWith("Z") ? utcIso : `${utcIso}Z`;
+      const d = new Date(iso);
+
+      const parts = new Intl.DateTimeFormat("en-IN", {
+         timeZone: "Asia/Kolkata",
+         day: "2-digit",
+         month: "2-digit",
+         year: "numeric",
+         hour: "2-digit",
+         minute: "2-digit",
+         hour12: true,
+      }).formatToParts(d);
+
+      const get = (type) => parts.find((p) => p.type === type)?.value || "";
+
+      const dd = get("day");
+      const mm = get("month");
+      const yyyy = get("year");
+      const hh = get("hour");
+      const min = get("minute");
+      const ampm = get("dayPeriod"); // AM / PM
+
+      return `${dd}-${mm}-${yyyy} ${hh}:${min} ${ampm}`;
+   };
+
    // FUNCTIONS HANDLING AND API POST CALLS
    const handleExpandCompany = () => {
       setExpandedCompany(!expandedCompany);
    };
+   const handleAddRemarks = async () => {
+      if (remarks == "") return;
+      const addedRemarks = await AxiosInstance.post("/remarks", {
+         remarks: remarks,
+         employeeId: userid,
+         candidateId: null,
+      });
+      var rem = remarksList;
+      rem.push(addedRemarks.data);
+      rem.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setRemarksList(rem);
+      setRemarks("");
+   };
 
    const handleAddCandidate = async () => {
+      var flag = 0;
+      if (!candidate.fullName) {
+         toast.error("Full Name is Required");
+         flag = 1;
+      }
+      if (candidate.mobile.includes("")) {
+         const ind = candidate.mobile.indexOf("");
+         toast.error(
+            "Missing " +
+               (ind === 0
+                  ? "1st"
+                  : ind === 1
+                    ? "2nd"
+                    : ind === 2
+                      ? "3rd"
+                      : ind + 1 + "th") +
+               " Mobile Number",
+         );
+         flag = 1;
+      }
+
+      if (
+         ["TAC", "GOOD"].includes(candidate.l2Assessment) &&
+         !candidate.interviewStatus
+      ) {
+         toast.error("Missing Interview Status");
+         flag = 1;
+      }
+
+      if (flag) return;
+      if (!["WD", "TAC", "GOOD"].includes(candidate.l1Assessment)) {
+         var can = candidate;
+         can.l2Assessment = null;
+         can.l2StatDate = null;
+         can.interviewStatDate = null;
+         can.tenureStatDate = null;
+         can.companyId = null;
+         can.roleId = null;
+         can.interviewDate = null;
+         can.rate = 0;
+         can.interviewStatus = null;
+         can.select = null;
+         can.EMP_ID = "";
+         can.invoiceNumber = "";
+         can.invoiceDate = null;
+         can.billingDate = null;
+         can.onboardingDate = null;
+         can.nextTrackingDate = null;
+
+         setCandidate({ ...can });
+      }
+
+      if (!["TAC", "GOOD"].includes(candidate.l2Assessment)) {
+         var can = candidate;
+         can.interviewStatus = null;
+
+         can.interviewStatDate = null;
+         can.tenureStatDate = null;
+         can.rate = 0;
+         can.select = null;
+         can.EMP_ID = "";
+         can.invoiceNumber = "";
+         can.invoiceDate = null;
+         can.billingDate = null;
+         can.onboardingDate = null;
+         can.nextTrackingDate = null;
+
+         setCandidate({ ...can });
+      }
+      if (candidate.interviewStatus !== "Select") {
+         var can = candidate;
+
+         can.tenureStatDate = null;
+         can.rate = 0;
+         can.select = null;
+         can.EMP_ID = "";
+         can.invoiceNumber = "";
+         can.invoiceDate = null;
+         can.billingDate = null;
+         can.onboardingDate = null;
+         can.nextTrackingDate = null;
+
+         setCandidate({
+            ...can,
+         });
+      }
+
       try {
-         var flag = 0;
-         if (!candidate.fullName) {
-            toast.error("Full Name is Required");
-            flag = 1;
-         }
-         if (candidate.mobile.includes("")) {
-            const ind = candidate.mobile.indexOf("");
-            toast.error(
-               "Missing " +
-                  (ind === 0
-                     ? "1st"
-                     : ind === 1
-                     ? "2nd"
-                     : ind === 2
-                     ? "3rd"
-                     : ind + 1 + "th") +
-                  " Mobile Number"
-            );
-            flag = 1;
-         }
-
-         if (
-            ["TAC", "GOOD"].includes(candidate.l2Assessment) &&
-            !candidate.interviewStatus
-         ) {
-            toast.error("Missing Interview Status");
-            flag = 1;
-         }
-         if (
-            ["TAC", "GOOD"].includes(candidate.l2Assessment) &&
-            candidate.interviewStatus === "Select" &&
-            !candidate.select
-         ) {
-            toast.error("Missing Select Status");
-            flag = 1;
-         }
-
-         if (flag) return;
-         if (candidate.l1Assessment || candidate.l1Assessment != "") {
-            candidate.l1StatDate = new Date();
-         }
-         if (candidate.l2Assessment || candidate.l2Assessment != "") {
-            candidate.l2StatDate = new Date();
-         }
-         if (candidate.interviewStatus || candidate.interviewStatus != "") {
-            candidate.interviewStatDate = new Date();
-         }
-         if (candidate.select || candidate.select != "") {
-            candidate.tenureStatDate = new Date();
-         }
-         console.log(candidate);
-         
          await AxiosInstance.post("/candidate", {
             ...candidate,
+            companyId: candidate.companyId
+               ? candidate.companyId._id
+               : candidate.companyId,
+            roleId: candidate.roleId ? candidate.roleId._id : candidate.roleId,
             assignedEmployee: userid,
             createdByEmployee: userid,
             createdOn: new Date(),
@@ -196,9 +283,7 @@ export default function AddCandidate(props) {
          });
          toast.success("Candidate Added Successfully");
          navigate("/");
-      } catch (error) {
-         console.log(error);
-      }
+      } catch (error) {}
    };
 
    const checkNumber = async (num) => {
@@ -240,8 +325,48 @@ export default function AddCandidate(props) {
                      },
                   }}
                />
-               <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.7) }}>
+               <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.75) }}>
                   <Grid container rowSpacing={2} columnSpacing={1}>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="tag"
+                           label="Tags"
+                           variant="outlined"
+                           fullWidth
+                           value={candidate.tag}
+                           onChange={(e) => {
+                              setCandidate({
+                                 ...candidate,
+                                 tag: e.target.value,
+                              });
+                              if (!e.target.validity.valid) {
+                                 toast.warning(
+                                    "Only Alphabets and Space allowed in Name!",
+                                 );
+                              }
+                           }}
+                           inputProps={{
+                              pattern: "[A-Za-z ]+",
+                           }}
+                        />
+                     </Grid>
+                     <Grid item xs={12}>
+                        <Autocomplete
+                           className="source"
+                           options={SOURCE}
+                           getOptionLabel={(option) => option}
+                           value={candidate.source}
+                           onChange={(e, v) => {
+                              setCandidate({
+                                 ...candidate,
+                                 source: v,
+                              });
+                           }}
+                           renderInput={(params) => (
+                              <TextField {...params} label="Source" />
+                           )}
+                        />
+                     </Grid>
                      <Grid item xs={12}>
                         <TextField
                            id="candiateName"
@@ -260,7 +385,7 @@ export default function AddCandidate(props) {
                               });
                               if (!e.target.validity.valid) {
                                  toast.warning(
-                                    "Only Alphabets and Space allowed in Name!"
+                                    "Only Alphabets and Space allowed in Name!",
                                  );
                               }
                            }}
@@ -269,7 +394,7 @@ export default function AddCandidate(props) {
 
                      {candidate.mobile.map((x, i) => (
                         <>
-                           <Grid item xs={7.5} md={9}>
+                           <Grid item xs={9}>
                               <TextField
                                  id="outlined-basic"
                                  label="Mobile Number"
@@ -279,7 +404,7 @@ export default function AddCandidate(props) {
                                  onChange={(e) => {
                                     if (!/^\d*$/.test(e.target.value))
                                        toast.warning(
-                                          "Only Number allowed in Mobile"
+                                          "Only Number allowed in Mobile",
                                        );
                                     candidate.mobile[i] = e.target.value;
                                     setCandidate({
@@ -287,28 +412,28 @@ export default function AddCandidate(props) {
                                        mobile: candidate.mobile,
                                     });
                                  }}
+                                 fullWidth
                                  onBlur={(e) => {
                                     if (!/^\d{10}$/.test(e.target.value)) {
                                        if (e.target.value.length === 0) return;
                                        toast.warning(
-                                          "Mobile number should be 10 digits"
+                                          "Mobile number should be 10 digits",
                                        );
                                        return;
                                     }
                                     checkNumber(e.target.value);
                                  }}
-                                 fullWidth
                               />
                            </Grid>
                            {i === 0 && (
-                              <Grid item xs={4.5} md={3}>
+                              <Grid item xs={3}>
                                  <Button
                                     fullWidth
                                     variant="contained"
                                     size="large"
                                     sx={{
-                                       height: "100%",
                                        backgroundColor: alpha("#0000FF", 0.5),
+                                       height: "100%",
                                     }}
                                     endIcon={<ControlPointIcon />}
                                     onClick={() =>
@@ -323,7 +448,7 @@ export default function AddCandidate(props) {
                               </Grid>
                            )}
                            {i !== 0 && (
-                              <Grid item xs={4.5} md={3}>
+                              <Grid item xs={3}>
                                  <Button
                                     fullWidth
                                     variant="contained"
@@ -339,7 +464,7 @@ export default function AddCandidate(props) {
                                           ...candidate,
                                           mobile: [...candidate.mobile].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -352,7 +477,7 @@ export default function AddCandidate(props) {
                      ))}
                      {candidate.email.map((x, i) => (
                         <>
-                           <Grid item xs={7.5} md={9}>
+                           <Grid item xs={9}>
                               <TextField
                                  id="outlined-basic"
                                  label="Email ID"
@@ -365,10 +490,11 @@ export default function AddCandidate(props) {
                                        email: candidate.email,
                                     });
                                  }}
+                                 fullWidth
                                  onBlur={(e) => {
                                     if (
-                                       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
-                                          e.target.value
+                                       !/^[a-zA-Z0-9]+@[a-zA-Z0-9]+\.[A-Za-z]+$/.test(
+                                          e.target.value,
                                        )
                                     ) {
                                        if (e.target.value.length === 0) return;
@@ -376,18 +502,17 @@ export default function AddCandidate(props) {
                                        return;
                                     }
                                  }}
-                                 fullWidth
                               />
                            </Grid>
                            {i === 0 && (
-                              <Grid item xs={4.5} md={3}>
+                              <Grid item xs={3}>
                                  <Button
                                     fullWidth
                                     variant="contained"
                                     size="large"
                                     sx={{
-                                       height: "100%",
                                        backgroundColor: alpha("#0000FF", 0.5),
+                                       height: "100%",
                                     }}
                                     endIcon={<ControlPointIcon />}
                                     onClick={() =>
@@ -402,7 +527,7 @@ export default function AddCandidate(props) {
                               </Grid>
                            )}
                            {i !== 0 && (
-                              <Grid item xs={4.5} md={3}>
+                              <Grid item xs={3}>
                                  <Button
                                     fullWidth
                                     variant="contained"
@@ -418,7 +543,7 @@ export default function AddCandidate(props) {
                                           ...candidate,
                                           email: [...candidate.email].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -577,7 +702,7 @@ export default function AddCandidate(props) {
                                              ...candidate.languages,
                                           ].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -697,7 +822,7 @@ export default function AddCandidate(props) {
                                              ...candidate.qualifications,
                                           ].filter(
                                              (_, indexFilter) =>
-                                                !(indexFilter === i)
+                                                !(indexFilter === i),
                                           ),
                                        });
                                     }}
@@ -718,10 +843,10 @@ export default function AddCandidate(props) {
                            value={candidate.skills}
                            onChange={(e, v) => {
                               const skillsToSplit = v.filter((v) =>
-                                 v.includes(" ")
+                                 v.includes(" "),
                               );
                               const remSkills = v.filter(
-                                 (v) => !v.includes(" ")
+                                 (v) => !v.includes(" "),
                               );
                               const skillsToPush = [];
                               skillsToSplit.forEach((element) => {
@@ -807,7 +932,7 @@ export default function AddCandidate(props) {
                                        <Grid item xs={12} md={6}>
                                           <TextField
                                              className="candidateCompanyName"
-                                             label="Comapany Name"
+                                             label="Company Name"
                                              variant="outlined"
                                              value={x.companyName}
                                              onChange={(e) => {
@@ -924,48 +1049,6 @@ export default function AddCandidate(props) {
                                                 fullWidth
                                                 variant="contained"
                                                 size="large"
-                                                onClick={() => {
-                                                   setCandidate({
-                                                      ...candidate,
-                                                      experience: [
-                                                         ...candidate.experience,
-                                                         {
-                                                            companyName: "",
-                                                            role: "",
-                                                            salary: 0,
-                                                            startDate: dayjs(
-                                                               new Date()
-                                                            ),
-                                                            endDate: dayjs(
-                                                               new Date()
-                                                            ),
-                                                            experience: 0,
-                                                         },
-                                                      ],
-                                                   });
-                                                }}
-                                                sx={{
-                                                   height: "100%",
-                                                   backgroundColor: alpha(
-                                                      "#0000FF",
-                                                      0.5
-                                                   ),
-                                                }}
-                                                endIcon={<ControlPointIcon />}
-                                             >
-                                                Add
-                                             </Button>
-                                          </Grid>
-                                       </>
-                                    )}
-                                    {i !== 0 && (
-                                       <>
-                                          <Grid item xs={7.5} md={9} />
-                                          <Grid item xs={4.5} md={3}>
-                                             <Button
-                                                fullWidth
-                                                variant="contained"
-                                                size="large"
                                                 color="error"
                                                 onClick={() => {
                                                    setCandidate({
@@ -974,7 +1057,9 @@ export default function AddCandidate(props) {
                                                          ...candidate.experience,
                                                       ].filter(
                                                          (_, indexFilter) =>
-                                                            !(indexFilter === i)
+                                                            !(
+                                                               indexFilter === i
+                                                            ),
                                                       ),
                                                    });
                                                 }}
@@ -982,7 +1067,7 @@ export default function AddCandidate(props) {
                                                    height: "100%",
                                                    backgroundColor: alpha(
                                                       "#FF0000",
-                                                      0.6
+                                                      0.6,
                                                    ),
                                                 }}
                                                 endIcon={
@@ -1025,6 +1110,7 @@ export default function AddCandidate(props) {
                               setCandidate({
                                  ...candidate,
                                  l1Assessment: e.target.value,
+                                 l1StatDate: new Date(),
                               })
                            }
                            fullWidth
@@ -1036,60 +1122,50 @@ export default function AddCandidate(props) {
                            ))}
                         </TextField>
                      </Grid>
-                     {access && (
-                        <Grid item xs={12} md={6}>
-                           <TextField
-                              id="candidateL2Assessment"
-                              select
-                              label="L2 Assessment"
-                              fullWidth
-                              value={candidate.l2Assessment}
-                              onChange={(e) =>
-                                 setCandidate({
-                                    ...candidate,
-                                    l2Assessment: e.target.value,
-                                 })
-                              }
-                           >
-                              {L2_STATUS.map((option) => (
-                                 <MenuItem key={option||"Empty"} value={option}>
-                                    {option||"--SELECT--"}
-                                 </MenuItem>
-                              ))}
-                           </TextField>
-                        </Grid>
-                     )}
-
-                     <Grid item xs={12}>
+                     <Grid item xs={12} md={6}>
                         <TextField
-                           id="candidateRemarks"
-                           label="Remarks"
-                           variant="outlined"
+                           id="candidateL2Assessment"
+                           select
+                           label="L2 Assessment"
                            fullWidth
-                           value={candidate.remarks}
+                           value={candidate.l2Assessment}
                            onChange={(e) =>
                               setCandidate({
                                  ...candidate,
-                                 remarks: e.target.value,
+                                 l2Assessment: e.target.value,
+                                 l2StatDate: new Date(),
                               })
                            }
-                           multiline
-                        />
+                        >
+                           {L2_STATUS.map((option) => (
+                              <MenuItem key={option || "Empty"} value={option}>
+                                 {option || "--SELECT--"}
+                              </MenuItem>
+                           ))}
+                        </TextField>
                      </Grid>
+
+                     
                      {["WD", "TAC", "GOOD"].includes(
-                        candidate.l1Assessment
+                        candidate.l1Assessment,
                      ) && (
                         <>
-                           <Grid item xs={4}>
+                           <Grid item xs={5}>
                               <Autocomplete
                                  id="Companies"
                                  disableClearable
                                  options={companiesList}
-                                 getOptionLabel={(option) => option.companyName}
+                                 value={candidate.companyId}
+                                 isOptionEqualToValue={(option, value) =>
+                                    option._id === value._id
+                                 }
+                                 getOptionLabel={(option) =>
+                                    option.companyName ? option.companyName : ""
+                                 }
                                  onChange={(e, newValue) => {
                                     setCandidate({
                                        ...candidate,
-                                       companyId: newValue._id,
+                                       companyId: newValue,
                                     });
                                     setRolesList(newValue.roles);
                                  }}
@@ -1105,16 +1181,20 @@ export default function AddCandidate(props) {
                                  )}
                               />
                            </Grid>
-                           <Grid item xs={4}>
+                           <Grid item xs={5}>
                               <Autocomplete
                                  id="Roles"
                                  disableClearable
                                  options={rolesList}
+                                 isOptionEqualToValue={(option, value) =>
+                                    option._id === value._id
+                                 }
+                                 value={candidate.roleId}
                                  getOptionLabel={(option) => option.role}
                                  onChange={(e, newValue) => {
                                     setCandidate({
                                        ...candidate,
-                                       roleId: newValue._id,
+                                       roleId: newValue,
                                     });
                                  }}
                                  renderInput={(params) => (
@@ -1129,6 +1209,22 @@ export default function AddCandidate(props) {
                                  )}
                               />
                            </Grid>
+                           <Grid item xs={2}>
+                              <a
+                                 href={`/EditRole/${
+                                    candidate.companyId?._id || ""
+                                 }/${candidate.roleId?._id || ""}?edit=false`}
+                                 target="_blank"
+                              >
+                                 <Button
+                                    variant="contained"
+                                    size="large"
+                                    sx={{ height: "100%" }}
+                                 >
+                                    <OpenInNew />
+                                 </Button>
+                              </a>
+                           </Grid>
                            <Grid item xs={4}>
                               <LocalizationProvider
                                  dateAdapter={AdapterDayjs}
@@ -1140,19 +1236,18 @@ export default function AddCandidate(props) {
                                     className="candidateCompanyEndDate"
                                     sx={{ width: "100%" }}
                                     fullWidth
-                                    value={candidate.interviewDate}
                                     onChange={(e) => {
                                        setCandidate({
                                           ...candidate,
                                           interviewDate: e,
                                        });
                                     }}
+                                    value={dayjs(candidate.interviewDate)}
                                  />
                               </LocalizationProvider>
                            </Grid>
                         </>
                      )}
-
                      {["TAC", "GOOD"].includes(candidate.l2Assessment) && (
                         <>
                            <Grid item xs={4}>
@@ -1165,6 +1260,7 @@ export default function AddCandidate(props) {
                                     setCandidate({
                                        ...candidate,
                                        interviewStatus: e.target.value,
+                                       interviewStatDate: new Date(),
                                     })
                                  }
                                  fullWidth
@@ -1176,40 +1272,191 @@ export default function AddCandidate(props) {
                                  ))}
                               </TextField>
                            </Grid>
+                           <Grid item xs={4}>
+                              <TextField
+                                 id="candidateEmpId"
+                                 label="Employee ID"
+                                 variant="outlined"
+                                 fullWidth
+                                 value={candidate.EMP_ID}
+                                 onChange={(e) =>
+                                    setCandidate({
+                                       ...candidate,
+                                       EMP_ID: e.target.value,
+                                    })
+                                 }
+                              />
+                           </Grid>
                         </>
                      )}
                      {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
-                        (candidate.interviewStatus === "Select" ||
-                           candidate.interviewStatus === "Offer Drop") && (
+                        candidate.interviewStatus === "Offer Drop" &&
+                        !false && (
+                           <Grid item xs={12}>
+                              <LocalizationProvider
+                                 dateAdapter={AdapterDayjs}
+                                 fullWidth
+                              >
+                                 <DatePicker
+                                    format="DD/MM/YYYY"
+                                    label="Offer Drop Date"
+                                    id="candidateOfferDropDate"
+                                    sx={{ width: "100%" }}
+                                    fullWidth
+                                    onChange={(e) => {
+                                       setCandidate({
+                                          ...candidate,
+                                          offerDropDate: e,
+                                       });
+                                    }}
+                                    value={dayjs(candidate.offerDropDate)}
+                                 />
+                              </LocalizationProvider>
+                           </Grid>
+                        )}
+                     {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
+                        candidate.interviewStatus === "Select" &&
+                        !false && (
+                           <>
+                              <Grid item xs={6}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Selection Date"
+                                       id="candidateSelectionDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             selectDate: e,
+                                          });
+                                       }}
+                                       value={dayjs(candidate.selectDate)}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+
+                              <Grid item xs={6}>
+                                 <TextField
+                                    id="candidateSelect"
+                                    select
+                                    label="Select"
+                                    value={candidate.select}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          select: e.target.value,
+                                          tenureStatDate: new Date(),
+                                       })
+                                    }
+                                    fullWidth
+                                 >
+                                    {SELECT_STATUS.map((option) => (
+                                       <MenuItem key={option} value={option}>
+                                          {option}
+                                       </MenuItem>
+                                    ))}
+                                 </TextField>
+                              </Grid>
+                           </>
+                        )}
+                     {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
+                        candidate.interviewStatus === "Select" &&
+                        [
+                           "Tracking",
+                           "Billing",
+                           "Need to Bill",
+                           "Invoice Processed",
+                           "Billed & Tracking",
+                        ].includes(candidate.select) && (
                            <>
                               <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateRate"
-                                    type="Number"
-                                    label="Rate"
-                                    value={candidate.rate}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          rate: e.target.value,
-                                       })
-                                    }
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
                                     fullWidth
-                                 ></TextField>
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Onboarding Date"
+                                       className="candidateonboardingDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       value={dayjs(candidate.onboardingDate)}
+                                       onChange={(e) =>
+                                          setCandidate({
+                                             ...candidate,
+                                             onboardingDate: e,
+                                          })
+                                       }
+                                    />
+                                 </LocalizationProvider>
                               </Grid>
                               <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateInvoiceNumber"
-                                    label="Invoice Number"
-                                    value={candidate.invoiceNumber}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          invoiceNumber: e.target.value,
-                                       })
-                                    }
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
                                     fullWidth
-                                 />
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Next Tracking Date"
+                                       className="candidateNXD"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       value={dayjs(candidate.nextTrackingDate)}
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             nextTrackingDate: e,
+                                          });
+                                       }}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="End Tracking Date"
+                                       className="candidateEXD"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       value={dayjs(candidate.endTrackingDate)}
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             endTrackingDate: e,
+                                          });
+                                       }}
+                                    />
+                                 </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <LocalizationProvider
+                                    dateAdapter={AdapterDayjs}
+                                    fullWidth
+                                 >
+                                    <DatePicker
+                                       format="DD/MM/YYYY"
+                                       label="Billing Date"
+                                       className="candidateBillingDate"
+                                       sx={{ width: "100%" }}
+                                       fullWidth
+                                       onChange={(e) => {
+                                          setCandidate({
+                                             ...candidate,
+                                             billingDate: e,
+                                          });
+                                       }}
+                                       value={dayjs(candidate.billingDate)}
+                                    />
+                                 </LocalizationProvider>
                               </Grid>
                               <Grid item xs={4}>
                                  <LocalizationProvider
@@ -1228,73 +1475,74 @@ export default function AddCandidate(props) {
                                              invoiceDate: e,
                                           });
                                        }}
-                                       value={candidate.invoiceDate}
+                                       value={dayjs(candidate.invoiceDate)}
                                     />
                                  </LocalizationProvider>
                               </Grid>
                               <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateSelect"
-                                    select
-                                    label="Tenure Status"
-                                    value={candidate.select}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          select: e.target.value,
-                                       })
-                                    }
-                                    fullWidth
-                                 >
-                                    {SELECT_STATUS.map((option) => (
-                                       <MenuItem key={option} value={option}>
-                                          {option}
-                                       </MenuItem>
-                                    ))}
-                                 </TextField>
-                              </Grid>
-                           </>
-                        )}
-                     {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
-                        candidate.interviewStatus === "Select" &&
-                        candidate.select === "Tracking" && (
-                           <>
-                              <Grid item xs={4}>
-                                 <TextField
-                                    id="candidateEmpId"
-                                    label="Employee ID"
-                                    variant="outlined"
-                                    fullWidth
-                                    value={candidate.EMP_ID}
-                                    onChange={(e) =>
-                                       setCandidate({
-                                          ...candidate,
-                                          EMP_ID: e.target.value,
-                                       })
-                                    }
-                                 />
-                              </Grid>
-                              <Grid item xs={3}>
                                  <LocalizationProvider
                                     dateAdapter={AdapterDayjs}
                                     fullWidth
                                  >
                                     <DatePicker
                                        format="DD/MM/YYYY"
-                                       label="Billing Date"
-                                       className="candidateBillingDate"
+                                       label="Invoice Credited Date"
+                                       className="candidateInvoiceCreditedDate"
                                        sx={{ width: "100%" }}
                                        fullWidth
                                        onChange={(e) => {
                                           setCandidate({
                                              ...candidate,
-                                             billingDate: e.target.value,
+                                             invoiceCreditDate: e,
                                           });
                                        }}
-                                       value={candidate.billingDate}
+                                       value={dayjs(
+                                          candidate.invoiceCreditDate,
+                                       )}
                                     />
                                  </LocalizationProvider>
                               </Grid>
+                              <Grid item xs={6}>
+                                 <TextField
+                                    id="candidateRate"
+                                    type="Number"
+                                    label="Rate"
+                                    value={candidate.rate}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          rate: e.target.value,
+                                       })
+                                    }
+                                    fullWidth
+                                 />
+                              </Grid>
+                              <Grid item xs={6}>
+                                 <TextField
+                                    id="candidateInvoiceNumber"
+                                    label="Invoice Number"
+                                    value={candidate.invoiceNumber}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          invoiceNumber: e.target.value,
+                                       })
+                                    }
+                                    fullWidth
+                                 />
+                              </Grid>
+                           </>
+                        )}
+                     {["TAC", "GOOD"].includes(candidate.l2Assessment) &&
+                        candidate.interviewStatus === "Select" &&
+                        [
+                           "Non Tenure",
+                           "Process Rampdown",
+                           "Client Rampdown",
+                           "Tenure-Source Conflit",
+                           "BGV Reject-Post",
+                        ].includes(candidate.select) && (
+                           <>
                               <Grid item xs={4}>
                                  <LocalizationProvider
                                     dateAdapter={AdapterDayjs}
@@ -1306,43 +1554,51 @@ export default function AddCandidate(props) {
                                        className="candidateonboardingDate"
                                        sx={{ width: "100%" }}
                                        fullWidth
-                                       onChange={(e) => {
+                                       value={dayjs(candidate.onboardingDate)}
+                                       onChange={(e) =>
                                           setCandidate({
                                              ...candidate,
-                                             onboardingDate: e.target.value,
-                                          });
-                                       }}
-                                       value={candidate.onboardingDate}
+                                             onboardingDate: e,
+                                          })
+                                       }
                                     />
                                  </LocalizationProvider>
                               </Grid>
                               <Grid item xs={4}>
                                  <LocalizationProvider
                                     dateAdapter={AdapterDayjs}
-                                    onChange={(e) => {
-                                       setCandidate({
-                                          ...candidate,
-                                          nextTrackingDate: e,
-                                       });
-                                    }}
-                                    value={candidate.nextTrackingDate}
                                     fullWidth
                                  >
                                     <DatePicker
                                        format="DD/MM/YYYY"
-                                       label="Next Tracking Date"
-                                       className="candidateNXD"
+                                       label="Non Tenure Date"
+                                       className="candidateNonTenureDate"
                                        sx={{ width: "100%" }}
                                        fullWidth
-                                       onChange={(e) => {
+                                       value={dayjs(candidate.nonTenureDate)}
+                                       onChange={(e) =>
                                           setCandidate({
                                              ...candidate,
-                                             nextTrackingDate: e.target.value,
-                                          });
-                                       }}
-                                       value={candidate.nextTrackingDate}
+                                             nonTenureDate: e,
+                                          })
+                                       }
                                     />
                                  </LocalizationProvider>
+                              </Grid>
+                              <Grid item xs={4}>
+                                 <TextField
+                                    id="candidateRate"
+                                    type="Number"
+                                    label="Rate"
+                                    value={candidate.rate}
+                                    onChange={(e) =>
+                                       setCandidate({
+                                          ...candidate,
+                                          rate: e.target.value,
+                                       })
+                                    }
+                                    fullWidth
+                                 />
                               </Grid>
                            </>
                         )}
@@ -1367,6 +1623,83 @@ export default function AddCandidate(props) {
                      height: "7vh",
                   }}
                />
+            </Card>
+            <Card
+               sx={{
+                  borderRadius: "20px",
+                  backgroundColor: "transparent",
+                  marginTop: "20px",
+               }}
+            >
+               <CardHeader
+                  sx={{
+                     backgroundColor: alpha("#0B0B0B", 0.5),
+                     backdropFilter: "blur(5px)",
+                     height: "7.5vh",
+                     color: "white",
+                  }}
+                  title="REMARKS"
+                  titleTypographyProps={{
+                     sx: {
+                        fontSize: "2.8vh",
+                        letterSpacing: "5px",
+                     },
+                  }}
+               />
+               <CardContent sx={{ backgroundColor: alpha("#FFFFFF", 0.75) }}>
+                  <Grid container rowSpacing={2} columnSpacing={1}>
+                     <Grid item xs={12}>
+                        <TextField
+                           id="candidateRemarks"
+                           label="Remarks"
+                           variant="outlined"
+                           fullWidth
+                           value={remarks}
+                           onChange={(e) => setRemarks(e.target.value)}
+                           multiline
+                        />
+                     </Grid>
+                     <Grid item xs={10} />
+                     <Grid item xs={2}>
+                        <Button
+                           fullWidth
+                           variant="contained"
+                           size="medium"
+                           onClick={handleAddRemarks}
+                           sx={{ backgroundColor: alpha("#0000FF", 0.5) }}
+                        >
+                           Post
+                        </Button>
+                     </Grid>
+                     {remarksList.map((remark) => (
+                        <Grid item xs={12}>
+                           <Card
+                              sx={{
+                                 borderRadius: "20px",
+                              }}
+                           >
+                              <CardHeader
+                                 avatar={
+                                    <Avatar
+                                       sx={{ bgcolor: red[500] }}
+                                       aria-label="recipe"
+                                    >
+                                       {remark.employeeId.name[0]}
+                                    </Avatar>
+                                 }
+                                 title={remark.employeeId.name}
+                                 subheader={formatUtcToIST(remark.createdAt)}
+                              />
+                              <CardContent>
+                                 <Typography variant="body">
+                                    {remark.remarks}
+                                 </Typography>
+                              </CardContent>
+                           </Card>
+                        </Grid>
+                     ))}
+                  </Grid>
+               </CardContent>
             </Card>
          </Container>
       </>

@@ -184,22 +184,22 @@
 .custom-grid .ag-header-cell,
 .custom-grid .ag-header-cell-label,
 .custom-grid .ag-header-cell-text {
-  font-size: 0.95rem !important;
-  line-height: 1 !important;
+  font-size: 1.2rem !important;
+  line-height: 2 !important;
   display: flex;
   align-items: center;
 }
 
 /* compact header height */
 .custom-grid .ag-header-row {
-  height: 32px !important;
+  height: 42px !important;
 }
 
 /* body cells: center content vertically and reduce padding */
 .custom-grid .ag-cell {
   display: flex !important;
   align-items: center !important;
-  font-size: 0.80rem !important;
+  font-size: 0.95rem !important;
   line-height: 1 !important;
   box-sizing: border-box;
   white-space: nowrap;
