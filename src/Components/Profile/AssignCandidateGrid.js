@@ -73,6 +73,7 @@ export default function AssignCandidateGrid(props) {
           { query: { ...location.state.query } },
         );
         const empres = await AxiosInstance.get("/employee");
+        console.log(candidates.data.candidates);
         setEmployeeList(empres.data.employees);
         setPotentialLeadList(candidates.data.candidates);
       } catch (error) {
@@ -587,10 +588,10 @@ export default function AssignCandidateGrid(props) {
                 overlayLoadingTemplate={
                   '<div class="ag-overlay-loading-center"><div class="spinner"></div></div>'
                 }
-                selection={selection}
+                // selection={selection}
                 paginationPageSizeSelector={paginationPageSizeSelector}
                 rowSelection={"multiple"}
-                isRowSelectable={() => true}
+                
               />
             </div>
           </CardContent>
