@@ -568,6 +568,9 @@ export default function Bulkupload() {
                         remarks: row.remarks
                            ? String(row.remarks).trim()
                            : undefined,
+                        companyId: row.companyId?String(row.companyId).trim():undefined,
+                        roleId: row.roleId?String(row.roleId).trim():undefined,
+
                         select: row.select
                            ? String(row.select).trim()
                            : undefined,
@@ -970,6 +973,8 @@ export default function Bulkupload() {
                                  l2Assessment: "Pass",
                                  source: "LinkedIn",
                                  tag: "Active",
+                                 companyId: "Company _id here",
+                                 roleId: "Role _id here",
 
                                  
                               },
@@ -1002,7 +1007,9 @@ export default function Bulkupload() {
                                  l2Assessment: "Pending",
                                  source: "Indeed",
                                  tag: "Promising",
-                                 
+                                 companyId: "Company _id here",
+                                 roleId: "Role _id here",
+
                               },
                            ]}
                            fileName={"Candidate Template"}

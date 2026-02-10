@@ -9,7 +9,7 @@ export default function CompanyDashboard() {
    const { employeeType } = useSelector((state) => state.user);
    const access = employeeType === "Recruiter";
    const MAAccess = ["Admin", "Manager"].includes(employeeType);
-   const ITLAccess = ["Intern", "Team Lead"].includes(employeeType);
+   const ITLAccess = ["Intern", "Teamlead"].includes(employeeType);
    useEffect(() => {
       const fetchData = async () => {
          try {
