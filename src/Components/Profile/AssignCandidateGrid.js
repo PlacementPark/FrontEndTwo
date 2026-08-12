@@ -33,18 +33,16 @@ import VisibilityTwoToneIcon from "@mui/icons-material/VisibilityTwoTone";
 import BorderColorTwoToneIcon from "@mui/icons-material/BorderColorTwoTone";
 import DeleteSweepTwoToneIcon from "@mui/icons-material/DeleteSweepTwoTone";
 import AxiosInstance from "../Main/AxiosInstance";
-import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
-import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-import { MenuItem } from "@mui/material";
-import { INTERVIEW_STATUS } from "../Main/Constants";
+import {
+  formatIstDateTimeValue,
+  istDateTimeComparator,
+} from "../Main/dateUtils";
 
 export default function AssignCandidateGrid(props) {
   // STATES HANDLING AND VARIABLES
   const [open, setOpen] = React.useState(false);
   const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
   const [selectedIds, setSelectedIds] = React.useState([]);
-  const [editOpen, setEditOpen] = React.useState(false);
-  const [remarks, setRemarks] = React.useState("");
   const { employeeType, userid } = useSelector((state) => state.user);
   const gridapi = React.useRef();
   const location = useLocation();
@@ -55,12 +53,8 @@ export default function AssignCandidateGrid(props) {
   const [assignees, setAssignees] = React.useState([]);
   const [warning, setWarning] = React.useState("");
   const [deleteData, setDeleteData] = React.useState({});
-  const [editData, setEditData] = React.useState({});
   const isAdmin = employeeType === "Admin";
   const rtAccess = ["Recruiter", "Intern"].includes(employeeType);
-  const RIBAccess = ["Recruiter", "Intern", "Business Development"].includes(
-    employeeType
-  );
   const empId = userid;
   const [tableData, setTableData] = React.useState([]);
 
@@ -73,7 +67,6 @@ export default function AssignCandidateGrid(props) {
           { query: { ...location.state.query } },
         );
         const empres = await AxiosInstance.get("/employee");
-        console.log(candidates.data.candidates);
         setEmployeeList(empres.data.employees);
         setPotentialLeadList(candidates.data.candidates);
       } catch (error) {
@@ -84,12 +77,11 @@ export default function AssignCandidateGrid(props) {
   }, [location.state.query]);
 
   // GRID HEADER/COLOUMS HANDLING
-
   const column = [
     {
       headerName: "Actions",
       width: isAdmin ? "180px" : "150px",
-      //field: "assignedEmployee",
+      field: "assignedEmployee",
 
       comparator: (a, b) => {
         if (a === empId && b !== empId) return -1;
@@ -102,7 +94,7 @@ export default function AssignCandidateGrid(props) {
         return (
           <>
             <Grid container columnSpacing={0}>
-              <Grid item xs={RIBAccess ? 6 : isAdmin ? 3 : 4}>
+              <Grid item xs={isAdmin ? 4 : 6}>
                 <IconButton
                   color="primary"
                   size="small"
@@ -111,7 +103,7 @@ export default function AssignCandidateGrid(props) {
                   <VisibilityTwoToneIcon />
                 </IconButton>
               </Grid>
-              <Grid item xs={RIBAccess ? 6 : isAdmin ? 3 : 4}>
+              <Grid item xs={isAdmin ? 4 : 6}>
                 <IconButton
                   size="small"
                   color="secondary"
@@ -127,19 +119,8 @@ export default function AssignCandidateGrid(props) {
                   <BorderColorTwoToneIcon />
                 </IconButton>
               </Grid>
-              {!RIBAccess && (
-                <Grid item xs={isAdmin ? 3 : 4}>
-                  <IconButton
-                    color="success"
-                    size="small"
-                    onClick={() => handleQuickEditPopup(props.data._id)}
-                  >
-                    <BorderColorTwoToneIcon />
-                  </IconButton>
-                </Grid>
-              )}
               {isAdmin && (
-                <Grid item xs={3}>
+                <Grid item xs={4}>
                   <IconButton
                     size="small"
                     color="error"
@@ -161,25 +142,19 @@ export default function AssignCandidateGrid(props) {
         );
       },
     },
+    { headerName: "Candidate Name", field: "fullName", pinned: "left" },
+    { headerName: "Candidate Number", field: "mobile", sortable: false },
+
     {
       headerName: "Created By",
       field: "createdByEmployee.name",
       headerCheckboxSelection: true,
       checkboxSelection: true,
       headerCheckboxSelectionFilteredOnly: true,
+      width: 200,
     },
     { headerName: "Assigned to", field: "assignedEmployee.name" },
-    { headerName: "Candidate Name", field: "fullName" },
-    { headerName: "Candidate ID", field: "candidateId" },
-    {
-      headerName: "Candidate Number",
-      sortable: false,
-      valueGetter: (p) => p.data?.mobile?.join(", ") || "",
-    },
-    {
-      headerName: "Candidate Email ID",
-      valueGetter: (p) => p.data?.email?.join(", ") || "",
-    },
+
     { headerName: "L1 Assessment", field: "l1Assessment" },
     { headerName: "L2 Assessment", field: "l2Assessment" },
     { headerName: "Company", field: "companyId.companyName" },
@@ -187,8 +162,9 @@ export default function AssignCandidateGrid(props) {
     {
       headerName: "Interview Date",
       field: "interviewDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     { headerName: "Interview Status", field: "interviewStatus" },
     { headerName: "Remarks", field: "remarks" },
@@ -196,32 +172,138 @@ export default function AssignCandidateGrid(props) {
     {
       headerName: "Onboarding Date",
       field: "onboardingDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Next Tracking Date",
       field: "nextTrackingDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
-    { headerName: "Rate", field: "rate", hide: !isAdmin },
+    {
+      headerName: "End Tracking Date",
+      field: "endTrackingDate",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => {
+        if (!p.value) return "";
+        const date = p.value instanceof Date ? p.value : new Date(p.value);
+        if (Number.isNaN(date.getTime())) return "";
+        return new Intl.DateTimeFormat("en-GB", {
+          timeZone: "Asia/Kolkata",
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        }).format(date);
+      },
+    },
+    { headerName: "Rate", field: "rate", hide: rtAccess },
     {
       headerName: "Billing Date",
       field: "billingDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Invoice Date",
       field: "invoiceDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Invoice Number",
       field: "invoiceNumber",
     },
+    {
+      headerName: "Home Town",
+      field: "homeTown",
+    },
+    {
+      headerName: "Current City",
+      field: "currentCity",
+    },
+    {
+      headerName: "Languages",
+      field: "languages",
+      valueFormatter: (p) =>
+        p.value?.map((lang) => lang.language).join(", ") || "",
+    },
+    {
+      headerName: "Experience",
+      field: "experience",
+      valueFormatter: (p) =>
+        p.value
+          ?.filter((exp) => exp.companyName && exp.role)
+          .map((exp) => `${exp.companyName} (${exp.role})`)
+          .join(", ") || "",
+    },
+    {
+      headerName: "Created On",
+      field: "createdOn",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Last Updated On",
+      field: "lastUpdatedOn",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Assigned On",
+      field: "assignedOn",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "L1 Status Date",
+      field: "l1StatDate",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "L2 Status Date",
+      field: "l2StatDate",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Interview Status Date",
+      field: "interviewStatDate",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Tenure Status Date",
+      field: "tenureStatDate",
+      filter: "agDateColumnFilter",
+      comparator: istDateTimeComparator,
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Candidate Email",
+      field: "email",
+    },
+    {
+      headerName: "Tag",
+      field: "tag",
+    },
+    {
+      headerName: "Source",
+      field: "source",
+    },
+    { headerName: "Candidate ID", field: "candidateId" },
   ];
 
   const defaultColDef = {
@@ -229,7 +311,10 @@ export default function AssignCandidateGrid(props) {
     editable: false,
     cellEditor: false,
     filter: true,
-    //rowSelection: "multiple",
+    rowSelection: "multiple",
+    filterParams: {
+      comparator: istDateTimeComparator,
+    },
   };
   const selection = React.useMemo(() => {
     return {
@@ -238,7 +323,7 @@ export default function AssignCandidateGrid(props) {
     };
   }, []);
   const paginationPageSizeSelector = React.useMemo(() => {
-    return [100, 200, 500, 1000];
+    return [200, 500, 1000];
   }, []);
 
   // FUNCTIONS HANDLING AND POST CALLS
@@ -322,10 +407,14 @@ export default function AssignCandidateGrid(props) {
       srCount -= count;
       ind += count;
     }
+    let loadingToast;
     try {
+      loadingToast = toast.loading("Assigning candidates...");
       await AxiosInstance.post("/candidate/candidate/assign", {
         list: assignedData,
       });
+      toast.dismiss(loadingToast);
+      toast.success("Candidates assigned successfully");
       setTimeout(
         () =>
           setPotentialLeadList(
@@ -335,7 +424,12 @@ export default function AssignCandidateGrid(props) {
           ),
         setWarning(""),
       );
-    } catch (error) {}
+    } catch (error) {
+      if (loadingToast) {
+        toast.dismiss(loadingToast);
+      }
+      toast.error("Failed to assign candidates");
+    }
   };
   const handleExcelExport = async () => {
     const selectedIds = gridapi.current.api
@@ -374,46 +468,6 @@ export default function AssignCandidateGrid(props) {
       });
     }
   };
-
-  const handleQuickEditPopup = async (id) => {
-    try {
-      const candidateData = await AxiosInstance.get("/candidate/" + id);
-      setEditData(candidateData.data);
-      setEditOpen(true);
-    } catch (error) {
-      toast.error("Failed to fetch candidate data");
-    }
-  };
-
-  const handleQuickEditSave = async () => {
-    try {
-      const updatedCandidateRes = await AxiosInstance.patch(
-        "/candidate/" + editData._id,
-        {
-          ...editData,
-        },
-      );
-      const addedRemarks = await AxiosInstance.post("/remarks", {
-        remarks: remarks,
-        employeeId: userid,
-        candidateId: editData._id,
-      });
-      const updatedCandidateData = updatedCandidateRes.data;
-      setTableData((prev) =>
-        prev.map((d) =>
-          d._id === updatedCandidateData._id
-            ? { ...d, ...updatedCandidateData }
-            : d,
-        ),
-      );
-      toast.success("Candidate updated successfully");
-    } catch (error) {
-      toast.error("Failed to update candidate");
-    }
-    setEditOpen(false);
-  };
-
-
   //JSX CODE
   return (
     <>
@@ -584,14 +638,14 @@ export default function AssignCandidateGrid(props) {
                 columnDefs={column}
                 defaultColDef={defaultColDef}
                 pagination={true}
-                paginationPageSize={100}
+                paginationPageSize={1000}
                 overlayLoadingTemplate={
                   '<div class="ag-overlay-loading-center"><div class="spinner"></div></div>'
                 }
-                // selection={selection}
+                selection={selection}
                 paginationPageSizeSelector={paginationPageSizeSelector}
                 rowSelection={"multiple"}
-                
+                isRowSelectable={() => true}
               />
             </div>
           </CardContent>
@@ -739,144 +793,6 @@ export default function AssignCandidateGrid(props) {
             variant="contained"
             size="large"
             onClick={() => setBulkDeleteOpen(false)}
-          >
-            Cancel
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Quick Edit Dialog */}
-      <Dialog
-        open={editOpen}
-        onClose={() => setEditOpen(false)}
-        sx={{
-          backgroundColor: "transparent",
-          "& .MuiDialog-paper": {
-            backgroundColor: "transparent",
-            backdropFilter: "blur(20px)",
-            boxShadow: "none",
-            color: "white",
-          },
-        }}
-      >
-        <DialogTitle
-          sx={{
-            textTransform: "uppercase",
-            letterSpacing: 6,
-          }}
-        >
-          Quick Edit Candidate
-        </DialogTitle>
-        <IconButton
-          aria-label="close"
-          onClick={() => setEditOpen(false)}
-          sx={{
-            position: "absolute",
-            right: 8,
-            top: 8,
-            color: (theme) => theme.palette.grey[500],
-          }}
-        >
-          <CloseIcon />
-        </IconButton>
-        <DialogContent dividers className="dw">
-          <Typography gutterBottom sx={{ fontWeight: "bold" }}>
-            Candidate ID : <span>{editData.candidateId}</span>
-          </Typography>
-          <Typography
-            gutterBottom
-            sx={{ fontWeight: "bold", marginBottom: "4vh" }}
-          >
-            Candidate Name : <span>{editData.fullName}</span>
-          </Typography>
-
-          <TextField
-            id="candidateInterviewStatus"
-            select
-            label="Interview Status"
-            className="tw"
-            value={editData.interviewStatus}
-            fullWidth
-            sx={{ marginBottom: "2vh" }}
-            onChange={(e) =>
-              setEditData({
-                ...editData,
-                interviewStatus: e.target.value,
-                interviewStatDate: new Date(),
-              })
-            }
-          >
-            {INTERVIEW_STATUS.map((option) => (
-              <MenuItem key={option} value={option}>
-                {option}
-              </MenuItem>
-            ))}
-          </TextField>
-          <LocalizationProvider
-            gutterBottom
-            dateAdapter={AdapterDayjs}
-            fullWidth
-          >
-            <DatePicker
-              label="Interview Date"
-              className="calenderMUI"
-              sx={{ width: "100%", marginBottom: "2vh" }}
-              fullWidth
-              format="DD/MM/YYYY"
-              value={dayjs(editData.interviewDate)}
-              onChange={(e) => {
-                setEditData({
-                  ...editData,
-                  interviewDate: e,
-                });
-              }}
-            />
-          </LocalizationProvider>
-          <LocalizationProvider
-            gutterBottom
-            dateAdapter={AdapterDayjs}
-            fullWidth
-          >
-            <DatePicker
-              label="Next Tracking Date"
-              className="calenderMUI"
-              sx={{ width: "100%", marginBottom: "2vh" }}
-              fullWidth
-              format="DD/MM/YYYY"
-              value={dayjs(editData.nextTrackingDate)}
-              onChange={(e) => {
-                setEditData({
-                  ...editData,
-                  nextTrackingDate: e,
-                });
-              }}
-            />
-          </LocalizationProvider>
-          <TextField
-            className="tw"
-            sx={{ marginBottom: "2vh" }}
-            id="candidateLanguageRemark"
-            label="Remarks"
-            variant="outlined"
-            value={remarks}
-            onChange={(e) => setRemarks(e.target.value)}
-            fullWidth
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button
-            variant="contained"
-            size="large"
-            color="success"
-            sx={{ backgroundColor: alpha("#00FF00", 0.6) }}
-            onClick={handleQuickEditSave}
-          >
-            Save
-          </Button>
-          <Button
-            variant="contained"
-            size="large"
-            onClick={() => setEditOpen(false)}
           >
             Cancel
           </Button>

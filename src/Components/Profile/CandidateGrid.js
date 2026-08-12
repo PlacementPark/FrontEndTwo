@@ -36,6 +36,11 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import "../../App.css";
 import { INTERVIEW_STATUS } from "../Main/Constants";
+import {
+  formatIstDateTimeValue,
+  istDateTimeComparator,
+  formatISTDateValue,
+} from "../Main/dateUtils";
 var utc = require("dayjs/plugin/utc");
 dayjs.extend(utc);
 
@@ -53,9 +58,6 @@ export default function CandidateGrid() {
   ].includes(employeeType);
   const empId = userid;
   const isAdmin = employeeType === "Admin";
-  const RIBAccess = ["Recruiter", "Intern", "Business Development"].includes(
-    employeeType,
-  );
   const [tableData, setTableData] = useState([]);
   const gridapi = React.useRef();
   const [fileName, setFileName] = useState(String(new Date()));
@@ -72,9 +74,12 @@ export default function CandidateGrid() {
     paramsObj.companyId = searchParams.get("companyId");
   if (searchParams.has("roleId")) paramsObj.roleId = searchParams.get("roleId");
   const urlParams = new URLSearchParams(paramsObj).toString();
+  console.log("urlParams", urlParams);
   const [loadingToastId, setLoadingToastId] = useState(null);
   const url = `/candidate/data/${type}${urlParams ? "?" + urlParams : ""}`;
-
+  const paginationPageSizeSelector = React.useMemo(() => {
+    return [200, 500, 1000];
+  }, []);
   useEffect(() => {
     let isMounted = true;
     const fetchAllPages = async () => {
@@ -241,17 +246,15 @@ export default function CandidateGrid() {
                 <BorderColorTwoToneIcon />
               </IconButton>
             </Grid>
-            {!RIBAccess && (
-              <Grid item xs={isAdmin ? 3 : 4}>
-                <IconButton
-                  color="success"
-                  size="small"
-                  onClick={() => handleQuickEditPopup(props.data._id)}
-                >
-                  <EditAttributesTwoToneIcon />
-                </IconButton>
-              </Grid>
-            )}
+            <Grid item xs={isAdmin ? 3 : 4}>
+              <IconButton
+                color="success"
+                size="small"
+                onClick={() => handleQuickEditPopup(props.data._id)}
+              >
+                <EditAttributesTwoToneIcon />
+              </IconButton>
+            </Grid>
             {isAdmin && (
               <Grid item xs={3}>
                 <IconButton
@@ -302,6 +305,9 @@ export default function CandidateGrid() {
     //     );
     //   },
     // },
+    { headerName: "Candidate Name", field: "fullName", pinned: "left" },
+    { headerName: "Candidate Number", field: "mobile", sortable: false },
+
     {
       headerName: "Created By",
       field: "createdByEmployee.name",
@@ -311,10 +317,7 @@ export default function CandidateGrid() {
       width: 200,
     },
     { headerName: "Assigned to", field: "assignedEmployee.name" },
-    { headerName: "Candidate Name", field: "fullName", pinned: "left" },
-    { headerName: "Candidate ID", field: "candidateId" },
-    { headerName: "Candidate Number", field: "mobile", sortable: false },
-    { headerName: "Candidate Email ID", field: "email" },
+
     { headerName: "L1 Assessment", field: "l1Assessment" },
     { headerName: "L2 Assessment", field: "l2Assessment" },
     { headerName: "Company", field: "companyId.companyName" },
@@ -322,47 +325,161 @@ export default function CandidateGrid() {
     {
       headerName: "Interview Date",
       field: "interviewDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filter: "agTextColumnFilter",
+      // filterParams: {
+      //   filterValueGetter: (params) => {
+      //     // Pass the raw value through your formatting logic
+      //     return `$${params.getValue("price")}`;
+      //   },
+      // },
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.interviewDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     { headerName: "Interview Status", field: "interviewStatus" },
     { headerName: "Remarks", field: "remarks" },
     { headerName: "Tenure Status", field: "select" },
     {
+      headerName: "Selection Date",
+      field: "selectDate",
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.selectDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
+    },
+    {
       headerName: "Onboarding Date",
       field: "onboardingDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.onboardingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Next Tracking Date",
       field: "nextTrackingDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.nextTrackingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
+    },
+    {
+      headerName: "End Tracking Date",
+      field: "endTrackingDate",
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.endTrackingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     { headerName: "Rate", field: "rate", hide: rtAccess },
     {
       headerName: "Billing Date",
       field: "billingDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.billingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Invoice Date",
       field: "invoiceDate",
-      valueFormatter: (p) =>
-        p.value ? dayjs(p.value).format("DD/MM/YYYY") : p.value,
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.invoiceDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Invoice Number",
       field: "invoiceNumber",
     },
+    {
+      headerName: "Offer Drop Date",
+      field: "offerDropDate",
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.offerDropDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
+    },
+    {
+      headerName: "Home Town",
+      field: "homeTown",
+    },
+    {
+      headerName: "Current City",
+      field: "currentCity",
+    },
+    {
+      headerName: "Languages",
+      field: "languages",
+      valueFormatter: (p) =>
+        p.value?.map((lang) => lang.language).join(", ") || "",
+    },
+    {
+      headerName: "Experience",
+      field: "experience",
+      valueFormatter: (p) =>
+        p.value
+          ?.filter((exp) => exp.companyName && exp.role)
+          .map((exp) => `${exp.companyName} (${exp.role})`)
+          .join(", ") || "",
+    },
+    {
+      headerName: "Created On",
+      field: "createdOn",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Last Updated On",
+      field: "lastUpdatedOn",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Assigned On",
+      field: "assignedOn",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "L1 Status Date",
+      field: "l1StatDate",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "L2 Status Date",
+      field: "l2StatDate",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Interview Status Date",
+      field: "interviewStatDate",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Tenure Status Date",
+      field: "tenureStatDate",
+
+      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+    },
+    {
+      headerName: "Candidate Email",
+      field: "email",
+    },
+    {
+      headerName: "Tag",
+      field: "tag",
+    },
+    {
+      headerName: "Source",
+      field: "source",
+    },
+    { headerName: "Candidate ID", field: "candidateId" },
   ];
 
   const defaultColDef = {
     sortable: true,
     filter: true,
     resizable: true,
+    filterParams: {
+      comparator: istDateTimeComparator,
+    },
   };
 
   return (
@@ -465,7 +582,8 @@ export default function CandidateGrid() {
           columnDefs={column}
           defaultColDef={defaultColDef}
           pagination={true}
-          paginationPageSize={100}
+          paginationPageSize={1000}
+          paginationPageSizeSelector={paginationPageSizeSelector}
           rowSelection="multiple"
           domLayout="normal"
           suppressHorizontalScroll={false} // <-- allow scroll
@@ -628,7 +746,7 @@ export default function CandidateGrid() {
               className="calenderMUI"
               sx={{ width: "100%", marginBottom: "2vh" }}
               fullWidth
-              format="DD/MM/YYYY"
+              format="DD/MM/YYYY:HH:mm:ss"
               value={dayjs(editData.interviewDate)}
               onChange={(e) => {
                 setEditData({
@@ -648,7 +766,7 @@ export default function CandidateGrid() {
               className="calenderMUI"
               sx={{ width: "100%", marginBottom: "2vh" }}
               fullWidth
-              format="DD/MM/YYYY"
+              format="DD/MM/YYYY:HH:mm:ss"
               value={dayjs(editData.nextTrackingDate)}
               onChange={(e) => {
                 setEditData({

@@ -9,7 +9,9 @@ export default function CompanyDashboard() {
    const { employeeType } = useSelector((state) => state.user);
    const access = employeeType === "Recruiter";
    const MAAccess = ["Admin", "Manager"].includes(employeeType);
-   const ITLAccess = ["Intern", "Teamlead"].includes(employeeType);
+   const ITLAccess = ["Intern", "Team Lead", "Recruiter"].includes(
+     employeeType,
+   );
    useEffect(() => {
       const fetchData = async () => {
          try {
@@ -117,119 +119,119 @@ export default function CompanyDashboard() {
         ];
         console.log(cardItems)
    return (
-      <Box
-         sx={{
-            paddingTop: "10vh",
-            paddingX: { xs: "5%", md: "20%" },
-            paddingBottom: "3vh",
-         }}
-      >
-         {/* Add Company Button */}
-         <Grid container spacing={1} justifyContent="center">
-            {MAAccess && (
-               <Grid item xs={6}>
-                  <div
-                     className="dbButton"
-                     onClick={() => navigate("/addcompany")}
-                     style={{ textAlign: "center", marginBottom: "3vh" }}
-                  >
-                     <Typography
-                        variant="subtitle2"
-                        color="white"
-                        fontWeight="light"
-                        letterSpacing={2.5}
-                        sx={{
-                           fontSize: {
-                              xs: "0.7rem",
-                              sm: "0.8rem",
-                              md: "0.9rem",
-                           },
-                           textAlign: "center",
-                           whiteSpace: "normal",
-                           lineHeight: 1.2,
-                        }}
-                     >
-                        ADD COMPANY
-                     </Typography>
-                  </div>
-               </Grid>
-            )}
-            <Grid
-               item
-               xs={MAAccess ? 6 : 12}
-               onClick={() => navigate("/searchcompany")}
-            >
-               <div className="dbButton">
-                  <Typography
-                     variant="subtitle2"
-                     color="white"
-                     fontWeight="light"
-                     letterSpacing={2.5}
-                     sx={{
-                        fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.9rem" },
-                        textAlign: "center",
-                        whiteSpace: "normal",
-                        lineHeight: 1.2,
-                     }}
-                  >
-                     SEARCH COMPANY
-                  </Typography>
-               </div>
-            </Grid>
+     <Box
+       sx={{
+         paddingTop: "10vh",
+         paddingX: { xs: "5%", md: "20%" },
+         paddingBottom: "3vh",
+       }}
+     >
+       {/* Add Company Button */}
+       <Grid container spacing={1} justifyContent="center">
+         {MAAccess && (
+           <Grid item xs={6}>
+             <div
+               className="dbButton"
+               onClick={() => navigate("/addcompany")}
+               style={{ textAlign: "center", marginBottom: "3vh" }}
+             >
+               <Typography
+                 variant="subtitle2"
+                 color="white"
+                 fontWeight="light"
+                 letterSpacing={2.5}
+                 sx={{
+                   fontSize: {
+                     xs: "0.7rem",
+                     sm: "0.8rem",
+                     md: "0.9rem",
+                   },
+                   textAlign: "center",
+                   whiteSpace: "normal",
+                   lineHeight: 1.2,
+                 }}
+               >
+                 ADD COMPANY
+               </Typography>
+             </div>
+           </Grid>
+         )}
+         <Grid
+           item
+           xs={MAAccess ? 6 : 12}
+           onClick={() => navigate("/searchcompany")}
+         >
+           <div className="dbButton">
+             <Typography
+               variant="subtitle2"
+               color="white"
+               fontWeight="light"
+               letterSpacing={2.5}
+               sx={{
+                 fontSize: { xs: "0.7rem", sm: "0.8rem", md: "0.9rem" },
+                 textAlign: "center",
+                 whiteSpace: "normal",
+                 lineHeight: 1.2,
+               }}
+             >
+               SEARCH COMPANY
+             </Typography>
+           </div>
          </Grid>
+       </Grid>
 
-         {/* Cards */}
-         <Grid container spacing={3}>
-            {cardItems.map((item, index) => (
-               <Grid item xs={12} sm={access ? 12 : 6} key={index}>
-                  <Card
-                     sx={{
-                        ...cardsStyle,
-                        borderLeftColor: item.color,
-                        cursor: "pointer",
-                        paddingTop: "6.5vh",
-                     }}
-                     //readOnly={item.readOnly}
-                     onClick={() => (item.readOnly ? "" : navigate(item.path))}
-                  >
-                     <CardContent sx={{ padding: 0 }}>
-                        <Typography
-                           variant="subtitle2"
-                           fontWeight="light"
-                           sx={{
-                              fontSize: {
-                                 xs: "0.9rem",
-                                 sm: "0.95rem",
-                                 md: "1rem",
-                              },
-                              whiteSpace: "normal",
-                              overflowWrap: "break-word",
-                              lineHeight: 1.3,
-                              textAlign: "left",
-                           }}
-                        >
-                           {item.label}
-                        </Typography>
-                        <Typography
-                           variant="h6"
-                           sx={{
-                              fontSize: {
-                                 xs: "1.3rem",
-                                 sm: "1.5rem",
-                                 md: "1.7rem",
-                              },
-                              textAlign: "left",
-                              fontWeight: "bold",
-                           }}
-                           mt={1}
-                        >
-                           {item.count}
-                        </Typography>
-                     </CardContent>
-                  </Card>
-               </Grid>
-            ))}
-         </Grid>
-      </Box>
+       {/* Cards */}
+       <Grid container spacing={3}>
+         {cardItems.map((item, index) => (
+           <Grid item xs={12} sm={ITLAccess ? 12 : 6} key={index}>
+             <Card
+               sx={{
+                 ...cardsStyle,
+                 borderLeftColor: item.color,
+                 cursor: "pointer",
+                 paddingTop: "6.5vh",
+               }}
+               //readOnly={item.readOnly}
+               onClick={() => (item.readOnly ? "" : navigate(item.path))}
+             >
+               <CardContent sx={{ padding: 0 }}>
+                 <Typography
+                   variant="subtitle2"
+                   fontWeight="light"
+                   sx={{
+                     fontSize: {
+                       xs: "0.9rem",
+                       sm: "0.95rem",
+                       md: "1rem",
+                     },
+                     whiteSpace: "normal",
+                     overflowWrap: "break-word",
+                     lineHeight: 1.3,
+                     textAlign: "left",
+                   }}
+                 >
+                   {item.label}
+                 </Typography>
+                 <Typography
+                   variant="h6"
+                   sx={{
+                     fontSize: {
+                       xs: "1.3rem",
+                       sm: "1.5rem",
+                       md: "1.7rem",
+                     },
+                     textAlign: "left",
+                     fontWeight: "bold",
+                   }}
+                   mt={1}
+                 >
+                   {item.count}
+                 </Typography>
+               </CardContent>
+             </Card>
+           </Grid>
+         ))}
+       </Grid>
+     </Box>
    );
 }

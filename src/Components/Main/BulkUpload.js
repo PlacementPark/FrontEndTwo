@@ -568,9 +568,6 @@ export default function Bulkupload() {
                         remarks: row.remarks
                            ? String(row.remarks).trim()
                            : undefined,
-                        companyId: row.companyId?String(row.companyId).trim():undefined,
-                        roleId: row.roleId?String(row.roleId).trim():undefined,
-
                         select: row.select
                            ? String(row.select).trim()
                            : undefined,
@@ -668,7 +665,10 @@ export default function Bulkupload() {
                try {
                   await AxiosInstance.post(
                      "/candidate/bulkinsert",
-                     { candidates: validCandidates },
+                     {
+                        candidates: validCandidates,
+                        uploadedFileName: file.name,
+                     },
                      { timeout: 60000 }
                   );
                   toast.update(toastId, {
@@ -973,8 +973,6 @@ export default function Bulkupload() {
                                  l2Assessment: "Pass",
                                  source: "LinkedIn",
                                  tag: "Active",
-                                 companyId: "Company _id here",
-                                 roleId: "Role _id here",
 
                                  
                               },
@@ -1007,9 +1005,7 @@ export default function Bulkupload() {
                                  l2Assessment: "Pending",
                                  source: "Indeed",
                                  tag: "Promising",
-                                 companyId: "Company _id here",
-                                 roleId: "Role _id here",
-
+                                 
                               },
                            ]}
                            fileName={"Candidate Template"}
