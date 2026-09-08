@@ -36,6 +36,7 @@ import AxiosInstance from "../Main/AxiosInstance";
 import {
   formatIstDateTimeValue,
   istDateTimeComparator,
+  formatISTDateValue,
 } from "../Main/dateUtils";
 
 export default function AssignCandidateGrid(props) {
@@ -162,62 +163,73 @@ export default function AssignCandidateGrid(props) {
     {
       headerName: "Interview Date",
       field: "interviewDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
-      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+      filter: "agTextColumnFilter",
+      // filterParams: {
+      //   filterValueGetter: (params) => {
+      //     // Pass the raw value through your formatting logic
+      //     return `$${params.getValue("price")}`;
+      //   },
+      // },
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.interviewDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     { headerName: "Interview Status", field: "interviewStatus" },
     { headerName: "Remarks", field: "remarks" },
     { headerName: "Tenure Status", field: "select" },
     {
+      headerName: "Selection Date",
+      field: "selectDate",
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.selectDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
+    },
+    {
       headerName: "Onboarding Date",
       field: "onboardingDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
-      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.onboardingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Next Tracking Date",
       field: "nextTrackingDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
-      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.nextTrackingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "End Tracking Date",
       field: "endTrackingDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
-      valueFormatter: (p) => {
-        if (!p.value) return "";
-        const date = p.value instanceof Date ? p.value : new Date(p.value);
-        if (Number.isNaN(date.getTime())) return "";
-        return new Intl.DateTimeFormat("en-GB", {
-          timeZone: "Asia/Kolkata",
-          day: "2-digit",
-          month: "2-digit",
-          year: "numeric",
-        }).format(date);
-      },
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.endTrackingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     { headerName: "Rate", field: "rate", hide: rtAccess },
     {
       headerName: "Billing Date",
       field: "billingDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
-      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.billingDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Invoice Date",
       field: "invoiceDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
-      valueFormatter: (p) => formatIstDateTimeValue(p.value),
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.invoiceDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Invoice Number",
       field: "invoiceNumber",
+    },
+    {
+      headerName: "Offer Drop Date",
+      field: "offerDropDate",
+      filterValueGetter: (params) =>
+        formatISTDateValue(params.data?.offerDropDate),
+      valueFormatter: (p) => formatISTDateValue(p.value),
     },
     {
       headerName: "Home Town",
@@ -245,50 +257,43 @@ export default function AssignCandidateGrid(props) {
     {
       headerName: "Created On",
       field: "createdOn",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Last Updated On",
       field: "lastUpdatedOn",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Assigned On",
       field: "assignedOn",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "L1 Status Date",
       field: "l1StatDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "L2 Status Date",
       field: "l2StatDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Interview Status Date",
       field: "interviewStatDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
       headerName: "Tenure Status Date",
       field: "tenureStatDate",
-      filter: "agDateColumnFilter",
-      comparator: istDateTimeComparator,
+
       valueFormatter: (p) => formatIstDateTimeValue(p.value),
     },
     {
@@ -593,17 +598,19 @@ export default function AssignCandidateGrid(props) {
                   onChange={(e) => setFileName(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={4.5} sm={2.5} md={2}>
-                <Button
-                  fullWidth
-                  variant="contained"
-                  color="inherit"
-                  className="gridButton"
-                  onClick={handleExcelExport}
-                >
-                  Export Excel
-                </Button>
-              </Grid>
+              {isAdmin && (
+                <Grid item xs={4.5} sm={2.5} md={2}>
+                  <Button
+                    fullWidth
+                    variant="contained"
+                    color="inherit"
+                    className="gridButton"
+                    onClick={handleExcelExport}
+                  >
+                    Export Excel
+                  </Button>
+                </Grid>
+              )}
               {isAdmin && (
                 <Grid item xs={12} sm={3} md={2}>
                   <Button

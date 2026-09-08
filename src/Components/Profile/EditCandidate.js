@@ -50,7 +50,6 @@ export default function EditCandidate() {
   const rtAccess = [
     "Recruiter",
     "Intern",
-    "Teamlead",
     "Business Development",
   ].includes(employeeType);
   const [expandedCompany, setExpandedCompany] = React.useState(false);
@@ -222,7 +221,7 @@ export default function EditCandidate() {
       flag = 1;
     }
     if (
-      ["WD", "TAC", "GOOD", "NE-Fresher","NE-Experienced"].includes(
+      ["WD", "TAC", "GOOD", "NE-Fresher", "NE-Experienced"].includes(
         candidate.l1Assessment,
       ) &&
       !candidate.companyId
@@ -1224,7 +1223,9 @@ export default function EditCandidate() {
                 </>
               )}
 
-              {["WD", "TAC", "GOOD"].includes(candidate.l1Assessment) && (
+              {["WD", "TAC", "GOOD", "NE-Fresher", "NE-Experienced"].includes(
+                candidate.l1Assessment,
+              ) && (
                 <>
                   <Grid item xs={5}>
                     <Autocomplete

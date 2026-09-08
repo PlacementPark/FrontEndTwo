@@ -34,6 +34,7 @@ export default function CompanyGrid() {
   const { employeeType } = useSelector((state) => state.user);
   const [tableData, setTableData] = useState([]);
   const access = !["Recruiter", "Teamlead", "Intern"].includes(employeeType);
+  const isAdmin = employeeType === "Admin";
   const [deleteData, setDeleteData] = useState({});
   const [searchParams] = useSearchParams();
   const gridapi = useRef();
@@ -375,17 +376,18 @@ export default function CompanyGrid() {
             onChange={(e) => setFileName(e.target.value)}
           />
         </Grid>
-        <Grid item xs={12} sm={3} md={2}>
-          <Button
-            fullWidth
-            variant="contained"
-            color="inherit"
-            className="gridButton"
+        {isAdmin && (
+          <Grid item xs={12} sm={3} md={2}>
+            <Button
+              fullWidth
+              variant="contained"
+              color="inherit"
+              className="gridButton"
             onClick={handleExcelExport}
           >
             Export Excel
           </Button>
-        </Grid>
+        </Grid>)}
       </Grid>
 
       {/* Grid */}
