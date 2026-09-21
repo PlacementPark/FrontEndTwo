@@ -47,11 +47,9 @@ export default function EditCandidate() {
   const access = !["Recruiter", "Intern"].includes(employeeType);
   const TMAAccess = !["Recruiter", "Intern"].includes(employeeType);
   const [remarks, setRemarks] = React.useState("");
-  const rtAccess = [
-    "Recruiter",
-    "Intern",
-    "Business Development",
-  ].includes(employeeType);
+  const rtAccess = ["Recruiter", "Intern", "Business Development"].includes(
+    employeeType,
+  );
   const [expandedCompany, setExpandedCompany] = React.useState(false);
   const { id } = useParams();
   const [searchParams] = useSearchParams();
@@ -141,6 +139,22 @@ export default function EditCandidate() {
         const extraRes = await AxiosInstance.get("/extra/all");
         const remarksRes = await AxiosInstance.get("remarks/candidate/" + id);
         setCandidate({ ...candidate, ...canres.data });
+        // setRolesList(canres.data.companyId?.roles || []);
+        setCandidate((prev) => ({
+          ...prev,
+          billingDate: dayjs(
+            dayjs(prev.onboardingDate)?.add(
+              prev.roleId?.billingTerm || 0,
+              "day",
+            ),
+          ),
+          endTrackingDate: dayjs(
+            dayjs(prev.onboardingDate)?.add(
+              prev.roleId?.endTrackingDate || 0,
+              "day",
+            ),
+          ),
+        }));
         setCompaniesList(res.data.data);
         setRemarksList(remarksRes.data);
         console.log(extraRes.data);
@@ -1270,10 +1284,26 @@ export default function EditCandidate() {
                       value={candidate.roleId}
                       getOptionLabel={(option) => option.role}
                       onChange={(e, newValue) => {
-                        setCandidate({
-                          ...candidate,
+                        setCandidate((prev) => ({
+                          ...prev,
                           roleId: newValue,
-                        });
+                          ...(prev.onboardingDate
+                            ? {
+                                billingDate: dayjs(
+                                  dayjs(prev.onboardingDate).add(
+                                    newValue?.billingTerm || 0,
+                                    "day",
+                                  ),
+                                ),
+                                endTrackingDate: dayjs(
+                                  dayjs(prev.onboardingDate).add(
+                                    newValue?.endTrackingDate || 0,
+                                    "day",
+                                  ),
+                                ),
+                              }
+                            : {}),
+                        }));
                       }}
                       renderInput={(params) => (
                         <TextField
@@ -1547,12 +1577,10 @@ export default function EditCandidate() {
                           sx={{ width: "100%" }}
                           fullWidth
                           value={dayjs(
-                            candidate.endTrackingDate
-                              ? candidate.endTrackingDate
-                              : dayjs(candidate.onboardingDate)?.add(
-                                  candidate.roleId?.endTrackingDate || 0,
-                                  "day",
-                                ),
+                            dayjs(candidate.onboardingDate)?.add(
+                              candidate.roleId?.endTrackingDate || 0,
+                              "day",
+                            ),
                           )}
                           onChange={(e) => {
                             setCandidate({
@@ -1582,12 +1610,10 @@ export default function EditCandidate() {
                             });
                           }}
                           value={dayjs(
-                            candidate.billingDate
-                              ? candidate.billingDate
-                              : dayjs(candidate.onboardingDate)?.add(
-                                  candidate.roleId?.billingTerm || 0,
-                                  "day",
-                                ),
+                            dayjs(candidate.onboardingDate)?.add(
+                              candidate.roleId?.billingTerm || 0,
+                              "day",
+                            ),
                           )}
                           readOnly={true}
                         />

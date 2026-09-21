@@ -1183,6 +1183,24 @@ export default function AddCandidate() {
                           ...candidate,
                           roleId: newValue,
                         });
+                        if(candidate.onboardingDate){
+                          setCandidate({
+                            ...candidate,
+                            billingDate: dayjs(
+                              dayjs(candidate.onboardingDate)?.add(
+                                candidate.roleId?.billingTerm || 0,
+                                "day",
+                              ),
+                            ),
+                            endTrackingDate: dayjs(
+                              dayjs(candidate.onboardingDate)?.add(
+                                candidate.roleId?.endTrackingDate || 0,
+                                "day",
+                              ),
+                            ),
+                          });
+
+                        }
                       }}
                       renderInput={(params) => (
                         <TextField
